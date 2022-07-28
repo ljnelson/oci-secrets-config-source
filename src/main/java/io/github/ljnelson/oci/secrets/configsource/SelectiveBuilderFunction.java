@@ -19,42 +19,41 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
 import com.oracle.bmc.secrets.requests.GetSecretBundleRequest;
 
-public final class DefaultBuilderFunction implements Function<String, GetSecretBundleRequest.Builder> {
+public final class SelectiveBuilderFunction implements Function<String, GetSecretBundleRequest.Builder> {
 
     private final Predicate<? super String> propertyNameValidator;
 
-    private final Supplier<? extends GetSecretBundleRequest.Builder> builderSupplier;
+    private final Function<? super String, ? extends GetSecretBundleRequest.Builder> builderFunction;
 
-    public DefaultBuilderFunction(Set<? extends String> validPropertyNames) {
-        this(validPropertyNames, GetSecretBundleRequest::builder);
+    public SelectiveBuilderFunction(Set<? extends String> validPropertyNames) {
+        this(validPropertyNames, pn -> GetSecretBundleRequest.builder());
     }
 
-    public DefaultBuilderFunction(Set<? extends String> validPropertyNames,
-                                  Supplier<? extends GetSecretBundleRequest.Builder> builderSupplier) {
+    public SelectiveBuilderFunction(Set<? extends String> validPropertyNames,
+                                    Function<? super String, ? extends GetSecretBundleRequest.Builder> builderFunction) {
         super();
         final Set<String> s = Set.copyOf(validPropertyNames);
         this.propertyNameValidator = s.isEmpty() ? pn -> false : s::contains;
-        this.builderSupplier = Objects.requireNonNull(builderSupplier, "builderSupplier");
+        this.builderFunction = Objects.requireNonNull(builderFunction, "builderFunction");
     }
 
-    public DefaultBuilderFunction(Predicate<? super String> propertyNameValidator) {
-        this(propertyNameValidator, GetSecretBundleRequest::builder);
+    public SelectiveBuilderFunction(Predicate<? super String> propertyNameValidator) {
+        this(propertyNameValidator, pn -> GetSecretBundleRequest.builder());
     }
 
-    public DefaultBuilderFunction(Predicate<? super String> propertyNameValidator,
-                                  Supplier<? extends GetSecretBundleRequest.Builder> builderSupplier) {
+    public SelectiveBuilderFunction(Predicate<? super String> propertyNameValidator,
+                                    Function<? super String, ? extends GetSecretBundleRequest.Builder> builderFunction) {
         super();
         this.propertyNameValidator = Objects.requireNonNull(propertyNameValidator, "propertyNameValidator");
-        this.builderSupplier = Objects.requireNonNull(builderSupplier, "builderSupplier");
+        this.builderFunction = Objects.requireNonNull(builderFunction, "builderFunction");
     }
 
     @Override // Function
     public final GetSecretBundleRequest.Builder apply(String propertyName) {
-        return this.propertyNameValidator.test(propertyName) ? this.builderSupplier.get() : null;
+        return this.propertyNameValidator.test(propertyName) ? this.builderFunction.apply(propertyName) : null;
     }
 
 }

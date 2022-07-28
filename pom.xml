@@ -13,6 +13,10 @@
     <artifactId>oci-secrets-config-source</artifactId>
     <version>0.0.1-SNAPSHOT</version>
 
+    <properties>
+      <version.lib.oci>2.37.0</version.lib.oci>
+    </properties>
+
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -23,7 +27,7 @@
             <dependency>
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcpkix-jdk15on</artifactId>
-                <version>${bouncycastle.version}</version>
+                <version>1.70</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -37,10 +41,27 @@
             <groupId>org.eclipse.microprofile.config</groupId>
             <artifactId>microprofile-config-api</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.jboss</groupId>
             <artifactId>jandex</artifactId>
             <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-mp</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk15on</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-jdk14</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
@@ -55,6 +76,19 @@
     </dependencies>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <configuration>
+                        <systemPropertyVariables>
+                            <javax.sql.DataSource.test.password.expectedValue>${javax.sql.DataSource.test.password.expectedValue}</javax.sql.DataSource.test.password.expectedValue>
+                            <javax.sql.DataSource.test.password.secretId>${javax.sql.DataSource.test.password.secretId}</javax.sql.DataSource.test.password.secretId>
+                        </systemPropertyVariables>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.jboss.jandex</groupId>
