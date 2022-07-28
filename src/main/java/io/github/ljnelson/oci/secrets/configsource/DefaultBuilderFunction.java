@@ -23,7 +23,7 @@ import java.util.function.Supplier;
 
 import com.oracle.bmc.secrets.requests.GetSecretBundleRequest;
 
-public class DefaultBuilderFunction implements Function<String, GetSecretBundleRequest.Builder> {
+public final class DefaultBuilderFunction implements Function<String, GetSecretBundleRequest.Builder> {
 
     private final Predicate<? super String> propertyNameValidator;
 
