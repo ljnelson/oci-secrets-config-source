@@ -15,21 +15,13 @@
  */
 package io.github.ljnelson.oci.secrets.configsource;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Set;
-import java.util.function.Function;
 
-import com.oracle.bmc.ConfigFileReader;
-import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
-import com.oracle.bmc.secrets.SecretsClient;
-import com.oracle.bmc.secrets.requests.GetSecretBundleRequest;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.ConfigSource;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -46,27 +38,43 @@ public class TestAssembly {
     final void testAssembly() {
         ConfigSource cs =
             new SecretBundleConfigSource(new SimpleSecretsSupplier(),
-                                         new SelectiveBuilderFunction(Set.of("javax.sql.DataSource.test.password"), new ConfigurationBackedBuilderFunction()));
+                                         new SelectiveBuilderFunction(Set.of("javax.sql.DataSource.test.password"),
+                                                                      new ConfigurationBackedBuilderFunction()));
+        // Make sure non-existent stupid properties are handled.
         assertNull(cs.getValue("bogus"));
+
+        // Make sure properties found elsewhere are handled.
+        assertNull(cs.getValue("user.home"));
+
+        // Do the rest of this test only if the following assumptions hold.
         String secretId = System.getProperty("javax.sql.DataSource.test.password.secretId");
         assumeTrue(secretId != null && !secretId.isBlank());
         String expectedValue = System.getProperty("javax.sql.DataSource.test.password.expectedValue");
         assumeTrue(expectedValue != null && !expectedValue.isBlank());
         assumeTrue(Files.exists(Paths.get(System.getProperty("user.home"), ".oci", "config")));
+
+        // Make sure our ConfigSource and none other is used to go get
+        // the value for this out of the vault.
         assertEquals(expectedValue, cs.getValue("javax.sql.DataSource.test.password"));
     }
 
     @Test
     final void testDefaultBehavior() {
-        ConfigSource cs =
-            new SecretBundleConfigSource(new SimpleSecretsSupplier(),
-                                         new SelectiveBuilderFunction(Set.of("javax.sql.DataSource.test.password"), new ConfigurationBackedBuilderFunction()));
+        // Do the rest of this test only if the following assumptions hold.
         String secretId = System.getProperty("javax.sql.DataSource.test.password.secretId");
         assumeTrue(secretId != null && !secretId.isBlank());
         String expectedValue = System.getProperty("javax.sql.DataSource.test.password.expectedValue");
         assumeTrue(expectedValue != null && !expectedValue.isBlank());
         assumeTrue(Files.exists(Paths.get(System.getProperty("user.home"), ".oci", "config")));
+
+        // Set up the system as though our ConfigSource were
+        // discovered in the usual ServiceLoader fashion.  No typical
+        // user would ever do this.
         ConfigProviderResolver cpr = ConfigProviderResolver.instance();
+        ConfigSource cs =
+            new SecretBundleConfigSource(new SimpleSecretsSupplier(),
+                                         new SelectiveBuilderFunction(Set.of("javax.sql.DataSource.test.password"),
+                                                                      new ConfigurationBackedBuilderFunction()));
         Config c = cpr.getBuilder()
             .addDefaultSources()
             .addDiscoveredConverters()
@@ -74,7 +82,13 @@ public class TestAssembly {
             .withSources(cs)
             .build();
         cpr.registerConfig(c, Thread.currentThread().getContextClassLoader());
+
+        // Make sure that our ConfigSource is the one that gets chosen
+        // for properties it has declared it handles.
         assertEquals(expectedValue, c.getValue("javax.sql.DataSource.test.password", String.class));
+
+        // Make sure other legitimate property requests are handled.
+        assertEquals(System.getProperty("user.home"), c.getValue("user.home", String.class));
     }
   
 }
