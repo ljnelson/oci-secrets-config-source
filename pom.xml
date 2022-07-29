@@ -129,11 +129,6 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>com.oracle.oci.sdk</groupId>
-                <artifactId>oci-java-sdk-secrets</artifactId>
-                <version>2.37.0</version>
-            </dependency>
-            <dependency>
                 <groupId>io.helidon.config</groupId>
                 <artifactId>helidon-config-mp</artifactId>
                 <version>3.0.0</version>
@@ -142,6 +137,22 @@
                 <groupId>org.eclipse.microprofile.config</groupId>
                 <artifactId>microprofile-config-api</artifactId>
                 <version>3.0.1</version>
+            </dependency>
+            <!-- MicroProfile Config botches this badly; we have to
+                 include it here even though we have no intent of
+                 using OSGi. -->
+            <dependency>
+                <groupId>biz.aQute.bnd</groupId>
+                <artifactId>biz.aQute.bnd.annotation</artifactId>
+                <version>5.3.0</version>
+            </dependency>
+            <!-- MicroProfile Config botches this badly; we have to
+                 include it here even though we have no intent of
+                 using OSGi. -->
+            <dependency>
+                <groupId>org.osgi</groupId>
+                <artifactId>org.osgi.service.cdi</artifactId>
+                <version>1.0.0</version>
             </dependency>
             <dependency>
                 <groupId>org.hamcrest</groupId>
@@ -189,6 +200,20 @@
         <dependency>
             <groupId>org.eclipse.microprofile.config</groupId>
             <artifactId>microprofile-config-api</artifactId>
+        </dependency>
+
+        <!-- These provided-scope dependencies are sadly necessary to
+             silence warnings. MicroProfile Config depends on them,
+             badly, for some reason. -->
+        <dependency>
+            <groupId>biz.aQute.bnd</groupId>
+            <artifactId>biz.aQute.bnd.annotation</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.service.cdi</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
