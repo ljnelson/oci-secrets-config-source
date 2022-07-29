@@ -50,6 +50,10 @@ public class SecretBundleConfigSource implements ConfigSource {
 
     private final Function<? super String, ? extends GetSecretBundleRequest.Builder> builderFunction;
 
+    public SecretBundleConfigSource(Function<? super String, ? extends GetSecretBundleRequest.Builder> builderFunction) {
+        this(new SimpleSecretsSupplier(), builderFunction);
+    }
+    
     public SecretBundleConfigSource(Supplier<? extends Secrets> secretsSupplier,
                                     Function<? super String, ? extends GetSecretBundleRequest.Builder> builderFunction) {
         super();
