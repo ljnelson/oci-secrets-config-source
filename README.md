@@ -1,4 +1,4 @@
-# OCI Secrets Config Source
+# OCI Secrets ConfigSource
 
 ## Status
 
@@ -100,16 +100,16 @@ classpath, will be used by MicroProfile Config as just another config
 source.
 
 If you then set, for example, a system property like this:
-```
+```shell
 -DsomeSensitivePropertyName.secretId=ocid1.vaultsecret.oc1.iad... # i.e. a valid OCID to a secret
 ```
 …then any time a developer or a library or any code anywhere does
 this:
-```
+```java
 String s = ConfigProvider.getConfig().getPropertyValue("someSensitivePropertyName", String.class);
 ```
 …or this:
-```
+```java
 @Inject
 @ConfigProperty("someSensitivePropertyName")
 private String s;
