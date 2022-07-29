@@ -4,7 +4,7 @@
 
     <groupId>io.github.ljnelson</groupId>
     <artifactId>oci-secrets-config-source</artifactId>
-    <version>0.0.8</version>
+    <version>0.0.9-SNAPSHOT</version>
 
     <name>OCI Secrets ConfigSource</name>
     <description>OCI Secrets ConfigSource</description>
@@ -43,7 +43,7 @@
         <connection>scm:git:git@github.com:ljnelson/oci-secrets-config-source.git</connection>
         <developerConnection>scm:git:git@github.com:ljnelson/oci-secrets-config-source.git</developerConnection>
         <url>https://github.com/ljnelson/oci-secrets-config-source/</url>
-        <tag>v0.0.8</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <issueManagement>
