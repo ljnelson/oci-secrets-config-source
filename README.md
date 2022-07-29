@@ -84,8 +84,8 @@ import io.github.ljnelson.oci.secrets.configsource.SelectiveBuilderFunction;
 public class ExampleSecretBundleConfigSource extends SecretBundleConfigSource {
 
   public ExampleSecretBundleConfigSource() {
-    super(new SelectiveBuilderFunction("someSensitivePropertyName",
-                                       new ConfigurationBackedBuilderFunction()));
+    super(new SelectiveBuilderFunction(new ConfigurationBackedBuilderFunction(),
+                                       "someSensitivePropertyName"));
   }
 
 }
