@@ -402,11 +402,11 @@
                 <artifactId>nexus-staging-maven-plugin</artifactId>
             </plugin>
         </plugins>
-      </build>
+    </build>
 
-      <reporting>
-          <plugins>
-              <plugin>
+    <reporting>
+        <plugins>
+            <plugin>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <reportSets>
                     <reportSet>
@@ -415,7 +415,43 @@
                         </reports>
                     </reportSet>
                 </reportSets>
-              </plugin>
-          </plugins>
-      </reporting>
+            </plugin>
+        </plugins>
+    </reporting>
+
+    <profiles>
+        <profile>
+            <id>deployment</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <executions>
+                            <execution>
+                              <id>attach-javadocs</id>
+                              <goals>
+                                  <goal>jar</goal>
+                              </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-source-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
