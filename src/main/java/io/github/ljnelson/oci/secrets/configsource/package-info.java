@@ -13,4 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/**
+ * Provides classes and interfaces related to implementing {@link
+ * org.eclipse.microprofile.config.spi.ConfigSource}s that <a
+ * href="https://docs.oracle.com/en-us/iaas/tools/java/latest/com/oracle/bmc/secrets/Secrets.html#getSecretBundle-com.oracle.bmc.secrets.requests.GetSecretBundleRequest-">return
+ * values from an OCI vault secret</a>.
+ *
+ * @author <a href="https://about.me/lairdnelson" target="_top">Laird
+ * Nelson</a>
+ */
 package io.github.ljnelson.oci.secrets.configsource;

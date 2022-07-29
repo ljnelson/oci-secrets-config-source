@@ -38,14 +38,23 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
  * href="https://docs.oracle.com/en-us/iaas/tools/java/latest/com/oracle/bmc/secrets/Secrets.html#getSecretBundle-com.oracle.bmc.secrets.requests.GetSecretBundleRequest-">OCI
  * vault secret</a>.
  *
+ * @author <a href="https://about.me/lairdnelson/" target="_top">Laird
+ * Nelson</a>
+ *
  * @see #getValue(String)
  */
 public class SecretBundleConfigSource implements ConfigSource {
 
+
+    /*
+     * Static fields.
+     */
+
+
     private static final VarHandle SECRETS;
 
     static {
-        Lookup lookup = MethodHandles.lookup();
+        Lookup lookup = MethodHandles.lookup().in(SecretBundleConfigSource.class);
         try {
             SECRETS = lookup.findVarHandle(SecretBundleConfigSource.class, "secrets", Secrets.class);
         } catch (final NoSuchFieldException | IllegalAccessException reflectiveOperationException) {
@@ -53,12 +62,37 @@ public class SecretBundleConfigSource implements ConfigSource {
         }
     }
 
+
+    /*
+     * Instance fields.
+     */
+
+
     private volatile Secrets secrets;
 
     private final Supplier<? extends Secrets> secretsSupplier;
 
     private final Function<? super String, ? extends GetSecretBundleRequest.Builder> builderFunction;
 
+
+    /*
+     * Constructors.
+     */
+
+
+    /**
+     * Creates a new {@link SecretBundleConfigSource}.
+     *
+     * @param builderFunction a {@link Function} that, when given a
+     * property name, returns either a fully configured {@link
+     * GetSecretBundleRequest.Builder} or {@code null} if the property
+     * is not handled
+     *
+     * @exception NullPointerException if {@code builderFunction} is
+     * {@code null}
+     *
+     * @see #SecretBundleConfigSource(Supplier, Function)
+     */
     public SecretBundleConfigSource(Function<? super String, ? extends GetSecretBundleRequest.Builder> builderFunction) {
         this(new SimpleSecretsSupplier(), builderFunction);
     }
@@ -74,6 +108,9 @@ public class SecretBundleConfigSource implements ConfigSource {
      * GetSecretBundleRequest.Builder} or {@code null} if the property
      * is not handled
      *
+     * @exception NullPointerException if either argument is {@code
+     * null}
+     *
      * @see SimpleSecretsSupplier
      *
      * @see SelectiveBuilderFunction
@@ -85,21 +122,106 @@ public class SecretBundleConfigSource implements ConfigSource {
         this.builderFunction = Objects.requireNonNull(builderFunction, "builderFunction");
     }
 
+
+    /*
+     * Instance methods.
+     */
+
+
+    /**
+     * Returns a name for this {@link SecretBundleConfigSource}.
+     *
+     * <p>The default implementation of this method returns a valud as
+     * if computed by {@link Class#getName()
+     * this.getClass().getName()}.</p>
+     *
+     * <p>This method does not, and overrides of this method must not,
+     * return {@code null}.</p>
+     *
+     * <p>This method is, and overrides of this method must be, safe
+     * for concurrent use by multiple threads.</p>
+     *
+     * @return a non-{@code null} name
+     *
+     * @see ConfigSource#getName()
+     */
     @Override // ConfigSource
     public String getName() {
         return this.getClass().getName();
     }
 
+    /**
+     * Returns a {@link Map} representing properties which this {@link
+     * SecretBundleConfigSource} may be capable of reproducing, or
+     * not.
+     *
+     * <p>This area of the specification is so underspecified as to be
+     * useless.  Consequently the default implementation of this
+     * method returns a value equal to that computed by an invocation
+     * of {@link Map#of()}.</p>
+     *
+     * <p>Subclasses may feel free to override this method to do
+     * almost anything since the specification permits all possible
+     * behaviors.</p>
+     *
+     * <p>This method does not, and overrides of this method must not,
+     * return {@code null}.</p>
+     *
+     * <p>This method is, and overrides of this method must be, safe
+     * for concurrent use by multiple threads.</p>
+     *
+     * @return a non-{@code null}, immutable {@link Map}
+     */
     @Override // ConfigSource
     public Map<String, String> getProperties() {
         return Map.of();
     }
 
+    /**
+     * Returns a {@link Set} representing property names for which
+     * this {@link SecretBundleConfigSource} may or may not be capable
+     * of locating values.
+     *
+     * <p>This area of the specification is so underspecified as to be
+     * useless.  Consequently the default implementation of this
+     * method returns a value equal to that computed by an invocation
+     * of {@link Set#of()}.</p>
+     *
+     * <p>Subclasses may feel free to override this method to do
+     * almost anything since the specification permits all possible
+     * behaviors.</p>
+     *
+     * <p>This method does not, and overrides of this method must not,
+     * return {@code null}.</p>
+     *
+     * <p>This method is, and overrides of this method must be, safe
+     * for concurrent use by multiple threads.</p>
+     *
+     * @return a non-{@code null}, immutable {@link Set}
+     */
     @Override // ConfigSource
     public Set<String> getPropertyNames() {
         return Set.of();
     }
 
+    /**
+     * Returns a value for the supplied {@code propertyName}, or
+     * {@code null} if there is no such value at the moment of
+     * invocation.
+     *
+     * <p>This method is safe for concurrent use by multiple
+     * threads.</p>
+     *
+     * @param propertyName the name of the property; may be {@code null}
+     *
+     * @return a suitable value, or {@code null} if there is no value
+     * suitable for the supplied {@code propertyName}; this implies
+     * that no property name may have a suitable value of {@code null}
+     * which is but one of several deficiencies of the MicroProfile
+     * Config specification
+     *
+     * @see #SecretBundleConfigSource(Supplier. Function)
+     */
     @Override // ConfigSource
     public final String getValue(String propertyName) {
         GetSecretBundleRequest.Builder builder = this.builderFunction.apply(propertyName);

@@ -26,9 +26,21 @@ import com.oracle.bmc.secrets.requests.GetSecretBundleRequest;
 
 public final class SelectiveBuilderFunction implements Function<String, GetSecretBundleRequest.Builder> {
 
+
+    /*
+     * Instance fields.
+     */
+
+
     private final Function<? super String, ? extends GetSecretBundleRequest.Builder> builderFunction;
 
     private final Predicate<? super String> propertyNameValidator;
+
+
+    /*
+     * Constructors.
+     */
+
 
     public SelectiveBuilderFunction(final Pattern validPropertyNamesPattern) {
         this(ignoredPropertyName -> GetSecretBundleRequest.builder(),
@@ -109,6 +121,12 @@ public final class SelectiveBuilderFunction implements Function<String, GetSecre
         this.builderFunction = Objects.requireNonNull(builderFunction, "builderFunction");
         this.propertyNameValidator = Objects.requireNonNull(propertyNameValidator, "propertyNameValidator");
     }
+
+
+    /*
+     * Instance methods.
+     */
+
 
     @Override // Function
     public final GetSecretBundleRequest.Builder apply(String propertyName) {

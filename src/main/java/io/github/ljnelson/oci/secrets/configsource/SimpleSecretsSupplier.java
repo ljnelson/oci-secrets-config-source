@@ -26,12 +26,41 @@ import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
 import com.oracle.bmc.secrets.Secrets;
 import com.oracle.bmc.secrets.SecretsClient;
 
+/**
+ * A {@link Supplier} of {@link Secrets} instances.
+ *
+ * <a href="https://about.me/lairdnelson/" target="_top">Laird
+ * Nelson</a>
+ */
 public final class SimpleSecretsSupplier implements Supplier<Secrets> {
+
+
+    /*
+     * Instance fields.
+     */
+
 
     private final Supplier<? extends SecretsClient.Builder> builderSupplier;
 
     private final Supplier<? extends AbstractAuthenticationDetailsProvider> adpSupplier;
 
+
+    /*
+     * Constructors.
+     */
+
+
+    /**
+     * Creates a new {@link SimpleSecretsSupplier}.
+     *
+     * @see #SimpleSecretsSupplier(Supplier, Supplier)
+     *
+     * @see ConfigFileAuthenticationDetailsProvider
+     *
+     * @see ConfigFileReader#parseDefault()
+     *
+     * @see SecretsClient#builder()
+     */
     public SimpleSecretsSupplier() {
         this(SecretsClient::builder,
              () -> {
@@ -43,10 +72,36 @@ public final class SimpleSecretsSupplier implements Supplier<Secrets> {
              });
     }
 
+    /**
+     * Creates a new {@link SimpleSecretsSupplier}.
+     *
+     * @param adpSupplier a {@link Supplier} of {@link
+     * AbstractAuthenticationDetailsProvider} instances; must not be
+     * {@code null}
+     *
+     * @exception NullPointerException if {@code adpSupplier} is {@code null}
+     *
+     * @see #SimpleSecretsSupplier(Supplier, Supplier)
+     *
+     * @see SecretsClient#builder()
+     */
     public SimpleSecretsSupplier(Supplier<? extends AbstractAuthenticationDetailsProvider> adpSupplier) {
         this(SecretsClient::builder, adpSupplier);
     }
 
+    /**
+     * Creates a new {@link SimpleSecretsSupplier}.
+     *
+     * @param builderSupplier a {@link Supplier} of non-{@code null}
+     * {@link SecretsClient.Builder} instances; must not be {@code
+     * null}
+     *
+     * @param adpSupplier a {@link Supplier} of {@link
+     * AbstractAuthenticationDetailsProvider} instances; must not be
+     * {@code null}
+     *
+     * @exception NullPointerException if either argument is {@code null}
+     */
     public SimpleSecretsSupplier(Supplier<? extends SecretsClient.Builder> builderSupplier,
                                  Supplier<? extends AbstractAuthenticationDetailsProvider> adpSupplier) {
         super();
@@ -54,6 +109,19 @@ public final class SimpleSecretsSupplier implements Supplier<Secrets> {
         this.adpSupplier = Objects.requireNonNull(adpSupplier, "adpSupplier");
     }
 
+
+    /*
+     * Instance methods.
+     */
+
+
+    /**
+     * Returns a {@link Secrets} instance.
+     *
+     * <p>This method never returns {@code null}.</p>
+     *
+     * @return a non-{@code null} {@link Secrets} instance
+     */
     @Override // Supplier
     public final Secrets get() {
         return this.builderSupplier.get().build(this.adpSupplier.get());

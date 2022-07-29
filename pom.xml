@@ -68,15 +68,24 @@
 
         <!-- maven-javadoc-plugin properties -->
         <bottom><![CDATA[Copyright &copy; ${project.inceptionYear}&ndash;{currentYear}, <a href="${project.organization.url}" target="_top">${project.organization.name}</a>. All rights reserved.]]></bottom>
+        <detectJavaApiLink>false</detectJavaApiLink>
+        <detectLinks>false</detectLinks>
         <links>https://download.eclipse.org/microprofile/microprofile-config-3.0.1/apidocs/,https://docs.oracle.com/en-us/iaas/tools/java/latest/</links>
 
         <!-- maven-release-plugin properties; see http://maven.apache.org/maven-release/maven-release-plugin/ -->
-        <goals>deploy,site-deploy</goals>
+        <goals>deploy,post-site,scm-publish:publish-scm</goals>
+
         <!-- See http://central.sonatype.org/pages/apache-maven.html#performing-a-release-deployment-with-the-maven-release-plugin -->
         <releaseProfiles>deployment</releaseProfiles>
         <scmCommentPrefix>[maven-release-plugin] [skip ci]</scmCommentPrefix>
         <tagNameFormat>v@{project.version}</tagNameFormat>
         <useReleaseProfile>false</useReleaseProfile>
+
+        <!-- maven-scm-publish-plugin properties;
+             see https://maven.apache.org/plugins/maven-scm-publish-plugin/publish-scm-mojo.html -->
+        <scmpublish.content>${project.reporting.outputDirectory}</scmpublish.content>
+        <scmpublish.pubScmUrl>${project.scm.developerConnection}</scmpublish.pubScmUrl>
+        <scmpublish.scm.branch>gh-pages</scmpublish.scm.branch>
 
         <!-- maven-site-plugin properties -->
         <maven.site.deploy.skip>true</maven.site.deploy.skip>
@@ -283,6 +292,11 @@
                         <additionalJOptions combine.children="append">
                             <additionalJOption>-J-Dhttp.agent=maven-javadoc-plugin</additionalJOption>
                         </additionalJOptions>
+                        <additionalOptions>
+                            <additionalOption>--add-stylesheet</additionalOption>
+                            <additionalOption>${project.basedir}/src/main/javadoc/css/fonts.css</additionalOption>
+                        </additionalOptions>
+                        <docfilessubdirs>true</docfilessubdirs>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -304,6 +318,10 @@
                 <plugin>
                     <artifactId>maven-scm-plugin</artifactId>
                     <version>1.13.0</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-scm-publish-plugin</artifactId>
+                    <version>3.1.0</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-site-plugin</artifactId>
