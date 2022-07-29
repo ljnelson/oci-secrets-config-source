@@ -38,8 +38,8 @@ public class TestAssembly {
     final void testAssembly() {
         ConfigSource cs =
             new SecretBundleConfigSource(new SimpleSecretsSupplier(),
-                                         new SelectiveBuilderFunction(Set.of("javax.sql.DataSource.test.password"),
-                                                                      new ConfigurationBackedBuilderFunction()));
+                                         new SelectiveBuilderFunction(new ConfigurationBackedBuilderFunction(),
+                                                                      "javax.sql.DataSource.test.password"));
         // Make sure non-existent stupid properties are handled.
         assertNull(cs.getValue("bogus"));
 
@@ -73,8 +73,8 @@ public class TestAssembly {
         ConfigProviderResolver cpr = ConfigProviderResolver.instance();
         ConfigSource cs =
             new SecretBundleConfigSource(new SimpleSecretsSupplier(),
-                                         new SelectiveBuilderFunction(Set.of("javax.sql.DataSource.test.password"),
-                                                                      new ConfigurationBackedBuilderFunction()));
+                                         new SelectiveBuilderFunction(new ConfigurationBackedBuilderFunction(),
+                                                                      "javax.sql.DataSource.test.password"));
         Config c = cpr.getBuilder()
             .addDefaultSources()
             .addDiscoveredConverters()
