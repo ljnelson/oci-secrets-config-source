@@ -43,7 +43,7 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
  *
  * @see #getValue(String)
  */
-public class SecretBundleConfigSource implements ConfigSource {
+public class SecretBundleConfigSource implements AutoCloseable, ConfigSource {
 
 
     /*
@@ -127,6 +127,26 @@ public class SecretBundleConfigSource implements ConfigSource {
      * Instance methods.
      */
 
+
+    /**
+     * Closes this {@link SecretBundleConfigSource}.
+     */
+    @Override // AutoCloseable
+    public final void close() {
+        Secrets secrets = this.secrets; // volatile read
+        if (secrets != null) {
+            try {
+                secrets.close();
+            } catch (RuntimeException runtimeException) {
+                throw runtimeException;
+            } catch (Exception exception) {
+                if (exception instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
+                throw new IllegalStateException(exception.getMessage(), exception);
+            }
+        }
+    }
 
     /**
      * Returns a name for this {@link SecretBundleConfigSource}.
