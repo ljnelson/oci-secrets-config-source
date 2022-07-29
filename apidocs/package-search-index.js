@@ -1,1 +1,1 @@
-packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"io.github.ljnelson.oci.secrets.configsource"}];updateSearchResults();
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"m":"io.github.ljnelson.oci.secrets.configsource","l":"io.github.ljnelson.oci.secrets.configsource"}];updateSearchResults();

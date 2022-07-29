@@ -1,1 +1,1 @@
-moduleSearchIndex = [];updateSearchResults();
+moduleSearchIndex = [{"l":"io.github.ljnelson.oci.secrets.configsource"}];updateSearchResults();
