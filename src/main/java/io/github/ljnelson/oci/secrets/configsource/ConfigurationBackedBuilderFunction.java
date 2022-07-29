@@ -34,17 +34,28 @@ public final class ConfigurationBackedBuilderFunction implements Function<String
         this(() -> ConfigProvider.getConfig()::getOptionalValue);
     }
 
-    public ConfigurationBackedBuilderFunction(final Config config) {
+    public ConfigurationBackedBuilderFunction(ClassLoader cl) {
+        this(() -> ConfigProvider.getConfig(cl)::getOptionalValue);
+    }
+
+    public ConfigurationBackedBuilderFunction(Config config) {
         this(() -> config::getOptionalValue);
     }
-    
-    public ConfigurationBackedBuilderFunction(final Supplier<? extends BiFunction<? super String, ? super Class<?>, ? extends Optional<?>>> configSupplier) {
+
+    public ConfigurationBackedBuilderFunction(BiFunction<? super String, ? super Class<?>, ? extends Optional<?>> configFunction) {
+        this(() -> configFunction);
+    }
+
+    public ConfigurationBackedBuilderFunction(Supplier<? extends BiFunction<? super String, ? super Class<?>, ? extends Optional<?>>> configSupplier) {
         super();
         this.configSupplier = Objects.requireNonNull(configSupplier, "configSupplier");
     }
 
     @Override // Function
     public final GetSecretBundleRequest.Builder apply(String propertyName) {
+        if (propertyName == null || propertyName.isBlank()) {
+            return null;
+        }
         GetSecretBundleRequest.Builder builder = GetSecretBundleRequest.builder();
         BiFunction<? super String, ? super Class<?>, ? extends Optional<?>> config = this.configSupplier.get();
         Optional<String> secretId = (Optional<String>) config.apply(propertyName + ".secretId", String.class);

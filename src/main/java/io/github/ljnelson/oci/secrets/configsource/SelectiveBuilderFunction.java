@@ -29,19 +29,19 @@ public final class SelectiveBuilderFunction implements Function<String, GetSecre
     private final Function<? super String, ? extends GetSecretBundleRequest.Builder> builderFunction;
 
     public SelectiveBuilderFunction(Set<? extends String> validPropertyNames) {
-        this(validPropertyNames, pn -> GetSecretBundleRequest.builder());
+        this(validPropertyNames, ignoredPropertyName -> GetSecretBundleRequest.builder());
     }
 
     public SelectiveBuilderFunction(Set<? extends String> validPropertyNames,
                                     Function<? super String, ? extends GetSecretBundleRequest.Builder> builderFunction) {
         super();
         final Set<String> s = Set.copyOf(validPropertyNames);
-        this.propertyNameValidator = s.isEmpty() ? pn -> false : s::contains;
+        this.propertyNameValidator = s::contains;
         this.builderFunction = Objects.requireNonNull(builderFunction, "builderFunction");
     }
 
     public SelectiveBuilderFunction(Predicate<? super String> propertyNameValidator) {
-        this(propertyNameValidator, pn -> GetSecretBundleRequest.builder());
+        this(propertyNameValidator, ignoredPropertyName -> GetSecretBundleRequest.builder());
     }
 
     public SelectiveBuilderFunction(Predicate<? super String> propertyNameValidator,
