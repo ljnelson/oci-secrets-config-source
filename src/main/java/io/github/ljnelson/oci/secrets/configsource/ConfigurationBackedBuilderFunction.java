@@ -52,6 +52,7 @@ public final class ConfigurationBackedBuilderFunction implements Function<String
     }
 
     @Override // Function
+    @SuppressWarnings("unchecked")
     public final GetSecretBundleRequest.Builder apply(String propertyName) {
         if (propertyName == null || propertyName.isBlank()) {
             return null;

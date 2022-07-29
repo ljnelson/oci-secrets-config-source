@@ -31,6 +31,15 @@ import com.oracle.bmc.secrets.model.Base64SecretBundleContentDetails;
 import com.oracle.bmc.secrets.requests.GetSecretBundleRequest;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
+/**
+ * A {@link ConfigSource} implementation that returns certain <a
+ * href="https://github.com/eclipse/microprofile-config"
+ * target="_top">MicroProfile Config</a> property values from an <a
+ * href="https://docs.oracle.com/en-us/iaas/tools/java/latest/com/oracle/bmc/secrets/Secrets.html#getSecretBundle-com.oracle.bmc.secrets.requests.GetSecretBundleRequest-">OCI
+ * vault secret</a>.
+ *
+ * @see #getValue(String)
+ */
 public class SecretBundleConfigSource implements ConfigSource {
 
     private static final VarHandle SECRETS;
@@ -53,7 +62,22 @@ public class SecretBundleConfigSource implements ConfigSource {
     public SecretBundleConfigSource(Function<? super String, ? extends GetSecretBundleRequest.Builder> builderFunction) {
         this(new SimpleSecretsSupplier(), builderFunction);
     }
-    
+
+    /**
+     * Creates a new {@link SecretBundleConfigSource}.
+     *
+     * @param secretsSupplier a {@link Supplier} that returns {@link
+     * Secrets} instances; must not be {@code null}
+     *
+     * @param builderFunction a {@link Function} that, when given a
+     * property name, returns either a fully configured {@link
+     * GetSecretBundleRequest.Builder} or {@code null} if the property
+     * is not handled
+     *
+     * @see SimpleSecretsSupplier
+     *
+     * @see SelectiveBuilderFunction
+     */
     public SecretBundleConfigSource(Supplier<? extends Secrets> secretsSupplier,
                                     Function<? super String, ? extends GetSecretBundleRequest.Builder> builderFunction) {
         super();
