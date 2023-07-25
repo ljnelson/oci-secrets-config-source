@@ -1,5 +1,5 @@
 /*
- * Copyright © 2022 Laird Nelson.
+ * Copyright © 2022–2023 Laird Nelson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,19 +27,14 @@ import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 
 /**
- * A {@link Function} that, when supplied with a <a
- * href="https://github.com/eclipse/microprofile-config"
- * target="_top">MicroProfile Config</a> property name, returns a
- * fully-configured {@link GetSecretBundleRequest.Builder}, or {@code
- * null} if the property name is unsupported.
+ * A {@link Function} that, when supplied with a <a href="https://github.com/eclipse/microprofile-config"
+ * target="_top">MicroProfile Config</a> property name, returns a fully-configured {@link
+ * GetSecretBundleRequest.Builder}, or {@code null} if the property name is unsupported.
  *
- * <p>This class uses a user-supplied configuration facility to look
- * up certain configuration values to supply to any {@link
- * GetSecretBundleRequest.Builder} instances it may return from its
- * {@link #apply(String)} method.</p>
+ * <p>This class uses a user-supplied configuration facility to look up certain configuration values to supply to any
+ * {@link GetSecretBundleRequest.Builder} instances it may return from its {@link #apply(String)} method.</p>
  *
- * @author <a href="https://about.me/lairdnelson/" target="_top">Laird
- * Nelson</a>
+ * @author <a href="https://about.me/lairdnelson/" target="_top">Laird Nelson</a>
  *
  * @see #ConfigurationBackedBuilderFunction(Supplier)
  *
@@ -62,11 +57,9 @@ public final class ConfigurationBackedBuilderFunction implements Function<String
 
 
     /**
-     * Creates a new {@link ConfigurationBackedBuilderFunction} that
-     * will use an invocation of the {@link
-     * Config#getOptionalValue(String, Class)} method on the return
-     * value of an invocation of {@link ConfigProvider#getConfig()}
-     * for its configuration facility.
+     * Creates a new {@link ConfigurationBackedBuilderFunction} that will use an invocation of the {@link
+     * Config#getOptionalValue(String, Class)} method on the return value of an invocation of {@link
+     * ConfigProvider#getConfig()} for its configuration facility.
      *
      * @see #ConfigurationBackedBuilderFunction(Supplier)
      */
@@ -77,10 +70,8 @@ public final class ConfigurationBackedBuilderFunction implements Function<String
     /**
      * Creates a new {@link ConfigurationBackedBuilderFunction}.
      *
-     * @param cl a {@link ClassLoader} that will be supplied to
-     * invocations of the {@link
-     * ConfigProvider#getConfig(ClassLoader)} method; may be {@code
-     * null}
+     * @param cl a {@link ClassLoader} that will be supplied to invocations of the {@link
+     * ConfigProvider#getConfig(ClassLoader)} method; may be {@code null}
      *
      * @see #ConfigurationBackedBuilderFunction(Supplier)
      */
@@ -91,8 +82,7 @@ public final class ConfigurationBackedBuilderFunction implements Function<String
     /**
      * Creates a new {@link ConfigurationBackedBuilderFunction}.
      *
-     * @param config a {@link Config} whose {@link
-     * Config#getOptionalValue(String, Class)} method will be used to
+     * @param config a {@link Config} whose {@link Config#getOptionalValue(String, Class)} method will be used to
      * acquire property name values; must not be {@code null}
      *
      * @exception NullPointerException if {@code config} is {@code null}
@@ -106,14 +96,11 @@ public final class ConfigurationBackedBuilderFunction implements Function<String
     /**
      * Creates a new {@link ConfigurationBackedBuilderFunction}.
      *
-     * @param configFunction a {@link
-     * BiFunction} that, when supplied with a property name and a
-     * {@link Class}, returns a non-{@code null} {@link Optional}
-     * value for that property name whose value is castable to the
-     * {@link Class} in question; must not be {@code null}
+     * @param configFunction a {@link BiFunction} that, when supplied with a property name and a {@link Class}, returns
+     * a non-{@code null} {@link Optional} value for that property name whose value is castable to the {@link Class} in
+     * question; must not be {@code null}
      *
-     * @exception NullPointerException if {@code configFunction} is
-     * {@code null}
+     * @exception NullPointerException if {@code configFunction} is {@code null}
      *
      * @see #ConfigurationBackedBuilderFunction(Supplier)
      */
@@ -124,14 +111,11 @@ public final class ConfigurationBackedBuilderFunction implements Function<String
     /**
      * Creates a new {@link ConfigurationBackedBuilderFunction}.
      *
-     * @param configSupplier a {@link Supplier} of a {@link
-     * BiFunction} that, when supplied with a property name and a
-     * {@link Class}, returns a non-{@code null} {@link Optional}
-     * value for that property name whose value is castable to the
-     * {@link Class} in question; must not be {@code null}
+     * @param configSupplier a {@link Supplier} of a {@link BiFunction} that, when supplied with a property name and a
+     * {@link Class}, returns a non-{@code null} {@link Optional} value for that property name whose value is castable
+     * to the {@link Class} in question; must not be {@code null}
      *
-     * @exception NullPointerException if {@code configSupplier} is
-     * {@code null}
+     * @exception NullPointerException if {@code configSupplier} is {@code null}
      */
     public ConfigurationBackedBuilderFunction(Supplier<? extends BiFunction<? super String, ? super Class<?>, ? extends Optional<?>>> configSupplier) {
         super();
@@ -145,59 +129,46 @@ public final class ConfigurationBackedBuilderFunction implements Function<String
 
 
     /**
-     * Returns a {@link GetSecretBundleRequest.Builder} suitable for
-     * the supplied {@code propertyName}, or {@code null} if the
-     * property name is unsuitable.
+     * Returns a {@link GetSecretBundleRequest.Builder} suitable for the supplied {@code propertyName}, or {@code null}
+     * if the property name is unsuitable.
      *
-     * <p>If the supplied {@code propertyName} is {@code null} or
-     * {@linkplain String#isBlank() blank}, invocations of this method
-     * will return {@code null}.</p>
+     * <p>If the supplied {@code propertyName} is {@code null} or {@linkplain String#isBlank() blank}, invocations of
+     * this method will return {@code null}.</p>
      *
-     * <p>Otherwise, values for the following property names will be
-     * sought using the {@link BiFunction} {@linkplain
-     * #ConfigurationBackedBuilderFunction(Supplier) supplied at
-     * construction time}:</p>
+     * <p>Otherwise, values for the following property names will be sought using the {@link BiFunction} {@linkplain
+     * #ConfigurationBackedBuilderFunction(Supplier) supplied at construction time}:</p>
      *
      * <ul>
      *
-     * <li>{@linkplain
-     * GetSecretBundleRequest.Builder#opcRequestId(String)
+     * <li>{@linkplain GetSecretBundleRequest.Builder#opcRequestId(String)
      * <em><code>propertyName</code></em><code>.opcRequestId</code>}</li>
      *
      * <li>{@linkplain GetSecretBundleRequest.Builder#secretId(String)
-     * <em><code>propertyName</code></em><code>.secretId</code>}
-     * (required)</li>
+     * <em><code>propertyName</code></em><code>.secretId</code>} (required)</li>
      *
-     * <li>{@linkplain
-     * GetSecretBundleRequest.Builder#secretVersionName(String)
+     * <li>{@linkplain GetSecretBundleRequest.Builder#secretVersionName(String)
      * <em><code>propertyName</code></em><code>.secretVersionName</code>}</li>
      *
      * <li>{@linkplain GetSecretBundleRequest.Builder#stage(Stage)
      * <em><code>propertyName</code></em><code>.stage</code>}</li>
      *
-     * <li>{@linkplain
-     * GetSecretBundleRequest.Builder#versionNumber(Long)
+     * <li>{@linkplain GetSecretBundleRequest.Builder#versionNumber(Long)
      * <em><code>propertyName</code></em><code>.versionNumber</code>}</li>
      *
      * </ul>
      *
-     * <p>These values, if present, will be used to configure a {@link
-     * GetSecretBundleRequest.Builder} that will be returned.</p>
+     * <p>These values, if present, will be used to configure a {@link GetSecretBundleRequest.Builder} that will be
+     * returned.</p>
      *
-     * @param propertyName the name of a property for which a {@link
-     * GetSecretBundleRequest.Builder} is to be returned; may be
-     * {@code null} in which case {@code null} will be returned
+     * @param propertyName the name of a property for which a {@link GetSecretBundleRequest.Builder} is to be returned;
+     * may be {@code null} in which case {@code null} will be returned
      *
-     * @return a fully-configured {@link
-     * GetSecretBundleRequest.Builder} suitable for the supplied
-     * {@code propertyName}, or {@code null}
+     * @return a fully-configured {@link GetSecretBundleRequest.Builder} suitable for the supplied {@code propertyName},
+     * or {@code null}
      *
-     * @exception NullPointerException if the supplied {@code
-     * propertyName} is non-{@code null} and not {@linkplain
-     * String#isBlank() blank} and a value for the
-     * <em><code>propertyName</code></em><code>.secretId</code>
-     * property name is {@code null} or {@linkplain String#isBlank()
-     * blank}
+     * @exception NullPointerException if the supplied {@code propertyName} is non-{@code null} and not {@linkplain
+     * String#isBlank() blank} and a value for the <em><code>propertyName</code></em><code>.secretId</code> property
+     * name is {@code null} or {@linkplain String#isBlank() blank}
      *
      * @see GetSecretBundleRequest.Builder
      */

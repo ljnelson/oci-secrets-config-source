@@ -37,6 +37,8 @@ module io.github.ljnelson.oci.secrets.configsource {
 
     requires transitive microprofile.config.api;
 
-    requires transitive oci.java.sdk.shaded.full;
+    requires transitive oci.java.sdk.common;
+
+    requires transitive oci.java.sdk.secrets;
 
 }
