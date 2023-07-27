@@ -40,6 +40,7 @@ import org.eclipse.microprofile.config.ConfigProvider;
  *
  * @see #apply(String)
  */
+@Deprecated
 public final class ConfigurationBackedBuilderFunction implements Function<String, GetSecretBundleRequest.Builder> {
 
 

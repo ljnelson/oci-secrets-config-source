@@ -28,6 +28,7 @@ import com.oracle.bmc.secrets.SecretsClient;
  *
  * <a href="https://about.me/lairdnelson/" target="_top">Laird Nelson</a>
  */
+@Deprecated
 public final class SimpleSecretsSupplier implements Supplier<Secrets> {
 
 

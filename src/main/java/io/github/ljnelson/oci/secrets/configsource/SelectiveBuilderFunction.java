@@ -29,6 +29,7 @@ import com.oracle.bmc.secrets.requests.GetSecretBundleRequest;
  *
  * @see #apply(String)
  */
+@Deprecated
 public final class SelectiveBuilderFunction implements Function<String, GetSecretBundleRequest.Builder> {
 
 

@@ -37,6 +37,7 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
  *
  * @see #getValue(String)
  */
+@Deprecated
 public class SecretBundleConfigSource implements AutoCloseable, ConfigSource {
 
 
