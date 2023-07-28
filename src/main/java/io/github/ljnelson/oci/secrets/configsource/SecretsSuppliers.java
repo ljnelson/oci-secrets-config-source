@@ -12,17 +12,15 @@
  */
 package io.github.ljnelson.oci.secrets.configsource;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import com.oracle.bmc.ConfigFileReader;
-import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
-import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.BasicAuthenticationDetailsProvider;
 import com.oracle.bmc.secrets.Secrets;
 import com.oracle.bmc.secrets.SecretsClient;
+
+import static io.github.ljnelson.oci.secrets.configsource.adp.ADPs.adp;
 
 public final class SecretsSuppliers {
 
@@ -31,28 +29,24 @@ public final class SecretsSuppliers {
     }
 
     public static Supplier<? extends Secrets> secrets() {
-        return secrets(() -> {
-                try {
-                    return new ConfigFileAuthenticationDetailsProvider(ConfigFileReader.parseDefault());
-                } catch (IOException ioException) {
-                    throw new UncheckedIOException(ioException.getMessage(), ioException);
-                }
-            });
+        return secrets(adp());
     }
 
-    public static Supplier<? extends Secrets> secrets(AbstractAuthenticationDetailsProvider adp) {
+    public static Supplier<? extends Secrets> secrets(BasicAuthenticationDetailsProvider adp) {
+        Objects.requireNonNull(adp, "adp");
         return secrets(() -> adp);
     }
-    
-    public static Supplier<? extends Secrets> secrets(Supplier<? extends AbstractAuthenticationDetailsProvider> adpSupplier) {
+
+    public static Supplier<? extends Secrets> secrets(Supplier<? extends BasicAuthenticationDetailsProvider> adpSupplier) {
+        Objects.requireNonNull(adpSupplier, "adpSupplier");
         return secrets(SecretsClient.builder()::build, adpSupplier);
     }
-    
-    public static Supplier<? extends Secrets> secrets(Function<? super AbstractAuthenticationDetailsProvider, ? extends Secrets> f,
-                                                      Supplier<? extends AbstractAuthenticationDetailsProvider> adpSupplier) {
+
+    public static Supplier<? extends Secrets> secrets(Function<? super BasicAuthenticationDetailsProvider, ? extends Secrets> f,
+                                                      Supplier<? extends BasicAuthenticationDetailsProvider> adpSupplier) {
         Objects.requireNonNull(f, "f");
         Objects.requireNonNull(adpSupplier, "adpSupplier");
         return () -> f.apply(adpSupplier.get());
     }
-  
+
 }
