@@ -25,7 +25,9 @@ import static java.lang.System.Logger;
 import static java.lang.System.Logger.Level.INFO;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 public class TestAssembly2 {
@@ -36,6 +38,14 @@ public class TestAssembly2 {
         super();
     }
 
+    @Test
+    final void testLambdaIdentity() {
+        Runnable r = this::testLambdaIdentity;
+        Runnable r1 = this::testLambdaIdentity;
+        assertNotSame(r, r1);
+        assertNotEquals(r, r1);
+    }
+  
     @Test
     final void testAssembly() {
         LOGGER.log(INFO, "Starting testAssembly");

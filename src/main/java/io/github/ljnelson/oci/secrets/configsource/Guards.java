@@ -23,42 +23,115 @@ import java.util.function.Predicate;
 
 import java.util.regex.Pattern;
 
+/**
+ * A utility class containing useful operations for guarding {@link Function}s.
+ *
+ * @author <a href="https://about.me/lairdnelson/" target="_top">Laird Nelson</a>
+ *
+ * @see #guard(Function, Predicate)
+ */
 public final class Guards {
 
     private Guards() {
         super();
     }
 
+    /**
+     * Using {@linkplain ConfigAccessor#ofMicroProfileConfig() MicroProfileConfig}, retrieves the value of the {@code
+     * io.github.ljnelson.oci.secrets.configsource.Guards.acceptList} configuration property as a {@link Set}.
+     *
+     * @return a non-{@code null} {@link Set}
+     */
     public static Set<?> acceptList() {
         return acceptList(ConfigAccessor.ofMicroProfileConfig());
     }
 
+    /**
+     * Using the supplied {@link ConfigAccessor}, {@linkplain ConfigAccessor#get(String, Class) retrieves} the value of
+     * the {@code io.github.ljnelson.oci.secrets.configsource.Guards.acceptList} configuration property as a {@link
+     * Set}.
+     *
+     * @return a non-{@code null} {@link Set}
+     */
     @SuppressWarnings("unchecked")
     public static Set<?> acceptList(final ConfigAccessor c) {
         return Set.copyOf(c.get(Guards.class.getName() + ".acceptList", List.class).orElse(List.of()));
     }
 
+    /**
+     * Using {@linkplain ConfigAccessor#ofMicroProfileConfig() MicroProfileConfig}, retrieves the value of the {@code
+     * io.github.ljnelson.oci.secrets.configsource.Guards.acceptPattern} configuration property as a {@link Pattern}.
+     *
+     * <p><strong>Note:</strong> Conversion is handled by this class, not by a registered MicroProfile Config
+     * converter.</p>
+     *
+     * @return a non-{@code null} {@link Pattern}
+     */
     public static Pattern acceptPattern() {
         return acceptPattern(ConfigAccessor.ofMicroProfileConfig());
     }
 
+    /**
+     * Using the supplied {@link ConfigAccessor}, {@linkplain ConfigAccessor#get(String, Class) retrieves} the value of
+     * the {@code io.github.ljnelson.oci.secrets.configsource.Guards.acceptPattern} configuration property as a {@link
+     * Pattern}.
+     *
+     * @return a non-{@code null} {@link Pattern}
+     */
     public static Pattern acceptPattern(final ConfigAccessor c) {
         return acceptPattern(c.get(Guards.class.getName() + ".acceptPattern", String.class).orElse("^.*$"));
     }
 
+    /**
+     * {@linkplain Pattern#compile(String) Compiles} the supplied regular expression into a {@link Pattern} and
+     * returns it.
+     *
+     * @return a non-{@code null} {@link Pattern}
+     */
     public static Pattern acceptPattern(final CharSequence pattern) {
         return Pattern.compile(pattern.toString());
     }
 
+    /**
+     * Using {@linkplain ConfigAccessor#ofMicroProfileConfig() MicroProfileConfig}, retrieves the value of the {@code
+     * io.github.ljnelson.oci.secrets.configsource.Guards.denyList} configuration property as a {@link Set}.
+     *
+     * @return a non-{@code null} {@link Set}
+     */
     public static Set<?> denyList() {
         return denyList(ConfigAccessor.ofMicroProfileConfig());
     }
 
+    /**
+     * Using the supplied {@link ConfigAccessor}, {@linkplain ConfigAccessor#get(String, Class) retrieves} the value of
+     * the {@code io.github.ljnelson.oci.secrets.configsource.Guards.denyList} configuration property as a {@link
+     * Set}.
+     *
+     * @return a non-{@code null} {@link Set}
+     */
     @SuppressWarnings("unchecked")
     public static Set<?> denyList(final ConfigAccessor c) {
         return Set.copyOf(c.get(Guards.class.getName() + ".denyList", List.class).orElse(List.of()));
     }
 
+    /**
+     * Returns a {@link Function} that guards the supplied {@link Function} with the supplied {@link Predicate},
+     * returning {@code null} if the {@link Predicate}'s {@link Predicate#test(Object)} method returns {@code false},
+     * and returning the result of invoking the supplied {@link Function} otherwise.
+     *
+     * @param <T> the type of the supplied {@link Function}'s sole parameter
+     *
+     * @param <R> the return type of the supplied {@link Function}
+     *
+     * @param f the {@link Function} to guard; must not be {@code null}
+     *
+     * @param p the {@link Predicate} used to guard the supplied {@link Function}; must not be {@code null}
+     *
+     * @return {@code null} if the supplied {@link Predicate}'s {@link Predicate#test(Object)} method returns {@code
+     * false}, and returning the result of invoking the supplied {@link Function} otherwise
+     *
+     * @exception NullPointerException if any argument is {@code null}
+     */
     public static <T, R> Function<T, R> guard(Function<T, R> f, Predicate<? super T> p) {
         Objects.requireNonNull(f, "f");
         Objects.requireNonNull(p, "p");

@@ -12,31 +12,47 @@
  */
 package io.github.ljnelson.oci.secrets.configsource;
 
-import java.util.Map;
 import java.util.Optional;
 
 import org.eclipse.microprofile.config.ConfigProvider;
 
+/**
+ * A {@linkplain FunctionalInterface functional interface} providing access to a configuration system, such as
+ * {@linkplain org.eclipse.microprofile.config.Config MicroProfile Config}.
+ *
+ * @author <a href="https://about.me/lairdnelson/" target="_top">Laird Nelson</a>
+ */
 @FunctionalInterface
 public interface ConfigAccessor {
 
+    /**
+     * Returns a non-{@code null} but possibly {@linkplain Optional#isEmpty() empty} {@link Optional} representing a
+     * configuration property value corresponding to the supplied name.
+     *
+     * <p>Implementations of this method must be safe for concurrent use by multiple threads.</p>
+     *
+     * @param <T> the type of the anticipated configuration property value
+     *
+     * @param name the configuration property name; must not be {@code null}
+     *
+     * @param c the anticipated type of the configuration property value; must not be {@code null}
+     *
+     * @return a non-{@code null} {@link Optional}
+     *
+     * @see org.eclipse.microprofile.config.Config#getOptionalValue(String, Class)
+     */
     public <T> Optional<T> get(String name, Class<T> c);
 
+    /**
+     * Returns a non-{@code null} {@link ConfigAccessor} implemented by the {@link
+     * org.eclipse.microprofile.config.Config#getOptionalValue(String, Class)} method.
+     *
+     * <p>This method is safe for concurrent use by multiple threads.</p>
+     *
+     * @return a non-{@code null} {@link ConfigAccessor}
+     */
     public static ConfigAccessor ofMicroProfileConfig() {
         return ConfigProvider.getConfig()::getOptionalValue;
-    }
-
-    public static ConfigAccessor ofMap(Map<?, ?> m) {
-        return new ConfigAccessor() {
-            @Override
-            public final <T> Optional<T> get(String k, Class<T> c) {
-                try {
-                    return Optional.ofNullable(c.cast(m.get(k)));
-                } catch (ClassCastException e) {
-                    return null;
-                }
-            }
-        };
     }
 
 }

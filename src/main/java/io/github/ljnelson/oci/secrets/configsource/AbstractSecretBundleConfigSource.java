@@ -28,6 +28,16 @@ import com.oracle.bmc.secrets.model.Base64SecretBundleContentDetails;
 import com.oracle.bmc.secrets.model.SecretBundleContentDetails;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
+/**
+ * An {@link AutoCloseable} {@link ConfigSource} that retrieves configuration property values from an <a
+ * href="https://docs.oracle.com/en-us/iaas/Content/KeyManagement/Concepts/keyoverview.htm" target="_top">Oracle Cloud
+ * Infrastructure Vault</a>.
+ *
+ * <p>This class is normally used as a superclass since it (deliberately) lacks a zero-argument {@code public}
+ * constructor, and so hence cannot be used as a Java {@linkplain java.util.ServiceLoader service provider}.</p>
+ *
+ * @author <a href="https://about.me/lairdnelson/" target="_top">Laird Nelson</a>
+ */
 @SuppressWarnings("try")
 public class AbstractSecretBundleConfigSource implements AutoCloseable, ConfigSource {
 
@@ -48,12 +58,41 @@ public class AbstractSecretBundleConfigSource implements AutoCloseable, ConfigSo
      * Constructors.
      */
 
-
+    /**
+     * Creates a new {@link AbstractSecretBundleConfigSource}.
+     *
+     * @param f a {@link Function} that accepts a configuration property name (a {@link String}) and returns a {@link
+     * SecretBundleContentDetails} object representing the value; must not be {@code null}; must be safe for concurrent
+     * use by multiple threads
+     *
+     * @param closeableSupplier a {@link Supplier} of an {@link AutoCloseable} typically supplying the {@link Secrets}
+     * typically used by the supplied {@link Function}; must not be {@code null}; its {@link Supplier#get()} method will
+     * be invoked when the {@link #close()} method is invoked, and {@link AutoCloseable#close()} will be invoked on its
+     * return value if the return value is non-{@code null}
+     *
+     * @see #AbstractSecretBundleConfigSource(Function, Supplier, Function)
+     */
     public AbstractSecretBundleConfigSource(final Function<? super String, ? extends SecretBundleContentDetails> f,
                                             final Supplier<? extends AutoCloseable> closeableSupplier) {
         this(f, closeableSupplier, null);
     }
 
+    /**
+     * Creates a new {@link AbstractSecretBundleConfigSource}.
+     *
+     * @param f a {@link Function} that accepts a configuration property name (a {@link String}) and returns a {@link
+     * SecretBundleContentDetails} object representing the value; must not be {@code null}; must be safe for concurrent
+     * use by multiple threads
+     *
+     * @param closeableSupplier a {@link Supplier} of an {@link AutoCloseable} typically supplying the {@link Secrets}
+     * typically used by the supplied {@link Function}; must not be {@code null}; its {@link Supplier#get()} method will
+     * be invoked when the {@link #close()} method is invoked, and {@link AutoCloseable#close()} will be invoked on its
+     * return value if the return value is non-{@code null}
+     *
+     * @param base64Decoder a {@link Function} that accepts a Base64-encoded {@link String} to decode and decodes it,
+     * returning the result; may be {@code null} in which case an implementation based on {@link Base64} will be used
+     * instead; if non-{@code null}, must be safe for concurrent use by multiple threads
+     */
     public AbstractSecretBundleConfigSource(final Function<? super String, ? extends SecretBundleContentDetails> f,
                                             final Supplier<? extends AutoCloseable> closeableSupplier,
                                             final Function<? super String, ? extends String> base64Decoder) {
@@ -72,6 +111,16 @@ public class AbstractSecretBundleConfigSource implements AutoCloseable, ConfigSo
 
     /**
      * Closes this {@link AbstractSecretBundleConfigSource}.
+     *
+     * <p>During an invocation of this method, the {@link Supplier#get()} method of the {@link Supplier} of {@link
+     * AutoCloseable} instances supplied at construction time will be invoked, and {@link AutoCloseable#close()} will be
+     * invoked on its return value, if the return value is non-{@code null}.</p>
+     *
+     * <p>This method is, and overrides of this method must be, safe for concurrent use by multiple threads.</p>
+     *
+     * @see #AbstractSecretBundleConfigSource(Function, Supplier, Function)
+     *
+     * @see AutoCloseable#close()
      */
     @Override // AutoCloseable
     public void close() {
@@ -160,8 +209,8 @@ public class AbstractSecretBundleConfigSource implements AutoCloseable, ConfigSo
      * @param propertyName the name of the property; may be {@code null}
      *
      * @return a suitable value, or {@code null} if there is no value suitable for the supplied {@code propertyName};
-     * this implies that no property name may have a suitable value of {@code null} (which is but one of several
-     * deficiencies of the MicroProfile Config specification)
+     * note that this implies that no property name may have a suitable value of {@code null} (which is but one of
+     * several deficiencies of the MicroProfile Config specification)
      */
     @Override // ConfigSource
     public String getValue(String propertyName) {
