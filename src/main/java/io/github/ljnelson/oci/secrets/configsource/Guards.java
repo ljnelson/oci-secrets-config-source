@@ -64,7 +64,7 @@ public final class Guards {
         Objects.requireNonNull(p, "p");
         return t -> p.test(t) ? f.apply(t) : null;
     }
-    
+
     public static <T, R> Function<T, R> guardWithAcceptList(Function<T, R> f) {
         return guardWithAcceptList(f, acceptList());
     }

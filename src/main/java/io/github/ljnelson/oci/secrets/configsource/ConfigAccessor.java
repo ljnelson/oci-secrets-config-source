@@ -30,7 +30,11 @@ public interface ConfigAccessor {
         return new ConfigAccessor() {
             @Override
             public final <T> Optional<T> get(String k, Class<T> c) {
-                return Optional.ofNullable(c.cast(m.get(k)));
+                try {
+                    return Optional.ofNullable(c.cast(m.get(k)));
+                } catch (ClassCastException e) {
+                    return null;
+                }
             }
         };
     }

@@ -41,7 +41,7 @@ public class AbstractSecretBundleConfigSource implements AutoCloseable, ConfigSo
 
     private final Function<? super String, ? extends SecretBundleContentDetails> f;
 
-    private final Supplier<? extends Secrets> secretsSupplier; // memoized
+    private final Supplier<? extends AutoCloseable> closeableSupplier;
 
 
     /*
@@ -50,16 +50,16 @@ public class AbstractSecretBundleConfigSource implements AutoCloseable, ConfigSo
 
 
     public AbstractSecretBundleConfigSource(final Function<? super String, ? extends SecretBundleContentDetails> f,
-                                            final Supplier<? extends Secrets> secretsSupplier) {
-        this(f, secretsSupplier, null);
+                                            final Supplier<? extends AutoCloseable> closeableSupplier) {
+        this(f, closeableSupplier, null);
     }
 
     public AbstractSecretBundleConfigSource(final Function<? super String, ? extends SecretBundleContentDetails> f,
-                                            final Supplier<? extends Secrets> secretsSupplier,
+                                            final Supplier<? extends AutoCloseable> closeableSupplier,
                                             final Function<? super String, ? extends String> base64Decoder) {
         super();
         this.f = Objects.requireNonNull(f, "f");
-        this.secretsSupplier = Suppliers.memoizedSupplier(Objects.requireNonNull(secretsSupplier, "secretsSupplier"));
+        this.closeableSupplier = Objects.requireNonNull(closeableSupplier, "closeableSupplier");
         this.base64Decoder =
             base64Decoder == null ? s -> s == null ? null : new String(Base64.getDecoder().decode(s), StandardCharsets.UTF_8) : base64Decoder;
     }
@@ -75,7 +75,7 @@ public class AbstractSecretBundleConfigSource implements AutoCloseable, ConfigSo
      */
     @Override // AutoCloseable
     public void close() {
-        AutoCloseable ac = this.secretsSupplier.get();
+        AutoCloseable ac = this.closeableSupplier.get();
         if (ac != null) {
             try {
                 ac.close();
@@ -164,7 +164,7 @@ public class AbstractSecretBundleConfigSource implements AutoCloseable, ConfigSo
      * deficiencies of the MicroProfile Config specification)
      */
     @Override // ConfigSource
-    public final String getValue(String propertyName) {
+    public String getValue(String propertyName) {
         return
             this.f.apply(propertyName) instanceof Base64SecretBundleContentDetails b64
             ? this.base64Decoder.apply(b64.getContent())

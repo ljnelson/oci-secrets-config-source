@@ -19,9 +19,7 @@ import java.util.function.Supplier;
 import com.oracle.bmc.secrets.Secrets;
 import com.oracle.bmc.secrets.model.SecretBundleContentDetails;
 import com.oracle.bmc.secrets.requests.GetSecretBundleByNameRequest;
-
-import static io.github.ljnelson.oci.secrets.configsource.SecretsSuppliers.secrets;
-import static io.github.ljnelson.oci.secrets.configsource.Suppliers.memoizedSupplier;
+import com.oracle.bmc.secrets.requests.GetSecretBundleRequest;
 
 public final class SecretBundleContentDetailsFunctions {
 
@@ -48,9 +46,9 @@ public final class SecretBundleContentDetailsFunctions {
             if (propertyName == null || propertyName.isBlank()) {
                 return null;
             }
-            final GetSecretBundleByNameRequest.Builder builder = bs.get(); // GetSecretBundleByNameRequest.builder();
+            var builder = bs.get(); // e.g. GetSecretBundleByNameRequest.builder();
             c.get(propertyName + ".opcRequestId", String.class).ifPresent(builder::opcRequestId);
-            c.get(propertyName + ".secretName", String.class).ifPresent(builder::secretName);
+            c.get(propertyName + ".secretName", String.class).ifPresentOrElse(builder::secretName, () -> builder.secretName(propertyName));
             c.get(propertyName + ".secretVersionName", String.class).ifPresent(builder::secretVersionName);
             c.get(propertyName + ".stage", GetSecretBundleByNameRequest.Stage.class).ifPresent(builder::stage);
             c.get(propertyName + ".vaultId", String.class).ifPresent(builder::vaultId);
@@ -59,8 +57,32 @@ public final class SecretBundleContentDetailsFunctions {
         };
     }
 
-    private static <T> T returnNull() {
-        return null;
+    @SuppressWarnings({"checkstyle:linelength"})
+    public static Function<String, SecretBundleContentDetails> secretBundleContentDetailsById(ConfigAccessor c,
+                                                                                              Supplier<? extends GetSecretBundleRequest.Builder> bs,
+                                                                                              Supplier<? extends Secrets> ss) { // better be memoized
+        return secretBundleContentDetailsById(c, bs, r -> ss.get().getSecretBundle(r).getSecretBundle().getSecretBundleContent());
+    }
+
+    @SuppressWarnings({"checkstyle:linelength"})
+    public static Function<String, SecretBundleContentDetails> secretBundleContentDetailsById(ConfigAccessor c,
+                                                                                              Supplier<? extends GetSecretBundleRequest.Builder> bs,
+                                                                                              Function<? super GetSecretBundleRequest, ? extends SecretBundleContentDetails> f) {
+        Objects.requireNonNull(c, "c");
+        Objects.requireNonNull(bs, "bs");
+        Objects.requireNonNull(f, "f");
+        return propertyName -> {
+            if (propertyName == null || propertyName.isBlank()) {
+                return null;
+            }
+            var builder = bs.get(); // e.g. GetSecretBundleRequest.builder();
+            c.get(propertyName + ".opcRequestId", String.class).ifPresent(builder::opcRequestId);
+            c.get(propertyName + ".secretId", String.class).ifPresent(builder::secretId);
+            c.get(propertyName + ".secretVersionName", String.class).ifPresent(builder::secretVersionName);
+            c.get(propertyName + ".stage", GetSecretBundleRequest.Stage.class).ifPresent(builder::stage);
+            c.get(propertyName + ".versionNumber", Long.class).ifPresent(builder::versionNumber);
+            return f.apply(builder.build());
+        };
     }
 
 }
