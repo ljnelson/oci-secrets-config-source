@@ -13,8 +13,6 @@
 package io.github.ljnelson.oci.secrets.configsource;
 
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
 import java.util.function.Function;
 
 /**

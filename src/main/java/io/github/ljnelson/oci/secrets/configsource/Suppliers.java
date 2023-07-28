@@ -45,9 +45,7 @@ public final class Suppliers {
         }
         return new Supplier<>() {
             private Supplier<R> d = this::compute;
-
             private boolean initialized;
-
             private synchronized R compute() {
                 if (!this.initialized) {
                     R r = s.get();
@@ -56,7 +54,6 @@ public final class Suppliers {
                 }
                 return this.d.get();
             }
-
             @Override
             public R get() {
                 return this.d.get();

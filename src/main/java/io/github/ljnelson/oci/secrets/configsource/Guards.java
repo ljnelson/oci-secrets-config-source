@@ -14,7 +14,6 @@ package io.github.ljnelson.oci.secrets.configsource;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 

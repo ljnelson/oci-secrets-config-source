@@ -278,6 +278,8 @@
                         <compilerArgs>
                             <arg>-Xlint:all</arg>
                             <arg>-parameters</arg>
+                            <arg>--add-modules</arg>
+                            <arg>java.desktop</arg> <!-- Thanks, MicroProfile Config. :-( -->
                         </compilerArgs>
                     </configuration>
                 </plugin>

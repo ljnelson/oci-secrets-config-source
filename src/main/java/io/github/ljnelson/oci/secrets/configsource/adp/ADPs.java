@@ -18,7 +18,6 @@ import java.io.UncheckedIOException;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.URI;
-import java.net.UnknownHostException;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
 import java.util.Optional;
@@ -39,20 +38,15 @@ import com.oracle.bmc.auth.SimplePrivateKeySupplier;
 import com.oracle.bmc.auth.StringPrivateKeySupplier;
 import io.github.ljnelson.oci.secrets.configsource.ConfigAccessor;
 
-import static com.oracle.bmc.auth.AbstractFederationClientAuthenticationDetailsProviderBuilder.METADATA_SERVICE_BASE_URL;
-
 public final class ADPs {
-
-    private static final class IMDS {
-        private static final String DEFAULT_HOSTNAME = URI.create(METADATA_SERVICE_BASE_URL).getHost();
-        private IMDS() {}
-    }
 
     private static final String OCI_AUTH_FINGERPRINT = "oci.auth.fingerprint";
 
     private static final String OCI_AUTH_PASSPHRASE = "oci.auth.passphrase"; // optional for simple
 
     private static final String OCI_AUTH_PRIVATE_KEY = "oci.auth.private-key"; // optional for simple
+
+    private static final String OCI_AUTH_PRIVATE_KEY_PATH = OCI_AUTH_PRIVATE_KEY + "-path"; // optional for simple
 
     private static final String OCI_AUTH_REGION = "oci.auth.region";
 
@@ -73,17 +67,16 @@ public final class ADPs {
     }
 
     @SuppressWarnings("checkstyle:linelength")
-    public static final Optional<Supplier<SimpleAuthenticationDetailsProvider>>
-        simple(ConfigAccessor c,
-               Supplier<? extends SimpleAuthenticationDetailsProviderBuilder> bs,
-               UnaryOperator<SimpleAuthenticationDetailsProviderBuilder> op) {
+    public static final Optional<Supplier<SimpleAuthenticationDetailsProvider>> simple(ConfigAccessor c,
+                                                                                       Supplier<? extends SimpleAuthenticationDetailsProviderBuilder> bs,
+                                                                                       UnaryOperator<SimpleAuthenticationDetailsProviderBuilder> op) {
         return
             c.get(OCI_AUTH_FINGERPRINT, String.class)
             .flatMap(fingerprint -> c.get(OCI_AUTH_REGION, Region.class)
                      .flatMap(region -> c.get(OCI_AUTH_TENANT_ID, String.class)
                               .flatMap(tenantId -> c.get(OCI_AUTH_USER_ID, String.class)
                                        .map(userId -> {
-                                               SimpleAuthenticationDetailsProviderBuilder b = bs.get();
+                                               var b = bs.get();
                                                b.fingerprint(fingerprint);
                                                b.region(region);
                                                b.tenantId(tenantId);
@@ -91,14 +84,10 @@ public final class ADPs {
                                                c.get(OCI_AUTH_PASSPHRASE, String.class).ifPresent(b::passPhrase);
                                                c.get(OCI_AUTH_PRIVATE_KEY, String.class)
                                                    .ifPresentOrElse(pk -> b.privateKeySupplier(new StringPrivateKeySupplier(pk)),
-                                                                    () -> b.privateKeySupplier(new SimplePrivateKeySupplier(c.get(OCI_AUTH_PRIVATE_KEY + "-path",
-                                                                                                                                  String.class)
-                                                                                                                            .orElse(c.get("oci.auth.keyFile",
-                                                                                                                                          String.class)
-                                                                                                                                    .orElse(Paths.get(System.getProperty("user.home"),
-                                                                                                                                                      ".oci",
-                                                                                                                                                      "oci_api_key.pem")
-                                                                                                                                            .toString())))));
+                                                                    () -> b.privateKeySupplier(new SimplePrivateKeySupplier(c.get(OCI_AUTH_PRIVATE_KEY_PATH, String.class)
+                                                                                                                            .orElse(Paths.get(System.getProperty("user.home"),
+                                                                                                                                              ".oci",
+                                                                                                                                              "oci_api_key.pem").toString()))));
                                                return op.apply(b)::build;
                                            }))));
     }
@@ -150,51 +139,43 @@ public final class ADPs {
         return instancePrincipals(c, InstancePrincipalsAuthenticationDetailsProvider::builder, UnaryOperator.identity());
     }
 
-    public static final Optional<Supplier<InstancePrincipalsAuthenticationDetailsProvider>>
-        instancePrincipals(ConfigAccessor c,
-                           Supplier<? extends InstancePrincipalsAuthenticationDetailsProviderBuilder> bs,
-                           UnaryOperator<InstancePrincipalsAuthenticationDetailsProviderBuilder> op) {
-        InetAddress imds = null;
+    @SuppressWarnings("checkstyle:linelength")
+    public static final Optional<Supplier<InstancePrincipalsAuthenticationDetailsProvider>> instancePrincipals(ConfigAccessor c,
+                                                                                                               Supplier<? extends InstancePrincipalsAuthenticationDetailsProviderBuilder> bs,
+                                                                                                               UnaryOperator<InstancePrincipalsAuthenticationDetailsProviderBuilder> op) {
+        int timeoutPositiveMillis = 100;
         try {
-            imds = InetAddress.getByName(c.get("oci.imds.hostname", String.class).orElse(IMDS.DEFAULT_HOSTNAME));
-        } catch (UnknownHostException unknownHostException) {
-            throw new UncheckedIOException(unknownHostException.getMessage(), unknownHostException);
-        }
-        int ociImdsTimeoutMillis = 100;
-        try {
-            ociImdsTimeoutMillis =
-                Math.max(0, c.get("oci.imds.timeout.milliseconds", Integer.class).orElse(Integer.valueOf(100)));
+            timeoutPositiveMillis = Math.max(0, c.get("oci.imds.timeout.milliseconds", Integer.class).orElse(100));
         } catch (IllegalArgumentException conversionException) {
         }
-        return instancePrincipals(imds, ociImdsTimeoutMillis, bs, op);
+        return instancePrincipals(timeoutPositiveMillis, bs, op);
     }
 
-    public static final Optional<Supplier<InstancePrincipalsAuthenticationDetailsProvider>>
-        instancePrincipals(InetAddress imds,
-                           int timeoutMillis,
-                           Supplier<? extends InstancePrincipalsAuthenticationDetailsProviderBuilder> bs,
-                           UnaryOperator<InstancePrincipalsAuthenticationDetailsProviderBuilder> op) {
+    @SuppressWarnings("checkstyle:linelength")
+    public static final Optional<Supplier<InstancePrincipalsAuthenticationDetailsProvider>> instancePrincipals(int timeoutPositiveMillis,
+                                                                                                               Supplier<? extends InstancePrincipalsAuthenticationDetailsProviderBuilder> bs,
+                                                                                                               UnaryOperator<InstancePrincipalsAuthenticationDetailsProviderBuilder> op) {
+        var b = bs.get();
         try {
-            if (!imds.isReachable(timeoutMillis)) {
-                return Optional.empty();
-            }
+            return
+                InetAddress.getByName(URI.create(b.getMetadataBaseUrl()).getHost()).isReachable(timeoutPositiveMillis)
+                ? Optional.of(op.apply(b)::build)
+                : Optional.empty();
         } catch (ConnectException e) {
             return Optional.empty();
-        } catch (IOException ioException) {
-            throw new UncheckedIOException(ioException.getMessage(), ioException);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e.getMessage(), e);
         }
-        return Optional.of(op.apply(bs.get())::build);
     }
 
     public static final Optional<Supplier<ResourcePrincipalAuthenticationDetailsProvider>> resourcePrincipal() {
         return resourcePrincipal(ResourcePrincipalAuthenticationDetailsProvider::builder, UnaryOperator.identity());
     }
 
-    public static final Optional<Supplier<ResourcePrincipalAuthenticationDetailsProvider>>
-        resourcePrincipal(Supplier<? extends ResourcePrincipalAuthenticationDetailsProviderBuilder> bs,
-                          UnaryOperator<ResourcePrincipalAuthenticationDetailsProviderBuilder> op) {
-        return
-            System.getenv("OCI_RESOURCE_PRINCIPAL_VERSION") == null ? Optional.empty() : Optional.of(op.apply(bs.get())::build);
+    @SuppressWarnings("checkstyle:linelength")
+    public static final Optional<Supplier<ResourcePrincipalAuthenticationDetailsProvider>> resourcePrincipal(Supplier<? extends ResourcePrincipalAuthenticationDetailsProviderBuilder> bs,
+                                                                                                             UnaryOperator<ResourcePrincipalAuthenticationDetailsProviderBuilder> op) {
+        return Optional.ofNullable(System.getenv("OCI_RESOURCE_PRINCIPAL_VERSION") == null ? null : op.apply(bs.get())::build);
     }
 
     public static final Supplier<? extends BasicAuthenticationDetailsProvider> adp() {
@@ -211,14 +192,14 @@ public final class ADPs {
                    UnaryOperator.identity());
     }
 
-    public static final Supplier<? extends BasicAuthenticationDetailsProvider>
-        adp(ConfigAccessor c,
-            Supplier<? extends SimpleAuthenticationDetailsProviderBuilder> simpleBs,
-            UnaryOperator<SimpleAuthenticationDetailsProviderBuilder> simpleOp,
-            Supplier<? extends InstancePrincipalsAuthenticationDetailsProviderBuilder> instanceBs,
-            UnaryOperator<InstancePrincipalsAuthenticationDetailsProviderBuilder> instanceOp,
-            Supplier<? extends ResourcePrincipalAuthenticationDetailsProviderBuilder> resourceBs,
-            UnaryOperator<ResourcePrincipalAuthenticationDetailsProviderBuilder> resourceOp) {
+    @SuppressWarnings("checkstyle:linelength")
+    public static final Supplier<? extends BasicAuthenticationDetailsProvider> adp(ConfigAccessor c,
+                                                                                   Supplier<? extends SimpleAuthenticationDetailsProviderBuilder> simpleBs,
+                                                                                   UnaryOperator<SimpleAuthenticationDetailsProviderBuilder> simpleOp,
+                                                                                   Supplier<? extends InstancePrincipalsAuthenticationDetailsProviderBuilder> instanceBs,
+                                                                                   UnaryOperator<InstancePrincipalsAuthenticationDetailsProviderBuilder> instanceOp,
+                                                                                   Supplier<? extends ResourcePrincipalAuthenticationDetailsProviderBuilder> resourceBs,
+                                                                                   UnaryOperator<ResourcePrincipalAuthenticationDetailsProviderBuilder> resourceOp) {
         return
             Stream.of(simple(c, simpleBs, simpleOp),
                       configFile(c),
@@ -226,7 +207,7 @@ public final class ADPs {
                       resourcePrincipal(resourceBs, resourceOp))
             .flatMap(Optional::stream)
             .findFirst()
-            .get();
+            .orElseThrow();
     }
 
 }
