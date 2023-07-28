@@ -23,16 +23,12 @@ import static io.github.ljnelson.oci.secrets.configsource.SecretsSuppliers.secre
 
 public final class SecretBundleByNameConfigSource extends AbstractSecretBundleConfigSource {
 
-  public SecretBundleByNameConfigSource() {
-    this(ConfigAccessor.ofMicroProfileConfig(), secrets()); // memoized
-  }
+    public SecretBundleByNameConfigSource() {
+        this(ConfigAccessor.ofMicroProfileConfig(), secrets()); // memoized
+    }
 
-  private SecretBundleByNameConfigSource(ConfigAccessor c, Supplier<? extends Secrets> ss) {
-    super(guardWithAcceptPattern(secretBundleContentDetailsByName(c,
-                                                                  GetSecretBundleByNameRequest::builder,
-                                                                  ss),
-                                 c),
-          ss);
-  }
+    private SecretBundleByNameConfigSource(ConfigAccessor c, Supplier<? extends Secrets> ss) {
+        super(guardWithAcceptPattern(secretBundleContentDetailsByName(c, GetSecretBundleByNameRequest::builder, ss), c), ss);
+    }
 
 }
