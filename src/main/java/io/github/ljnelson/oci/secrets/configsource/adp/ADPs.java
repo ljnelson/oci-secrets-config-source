@@ -20,6 +20,7 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
@@ -200,11 +201,41 @@ public final class ADPs {
                                                                                    UnaryOperator<InstancePrincipalsAuthenticationDetailsProviderBuilder> instanceOp,
                                                                                    Supplier<? extends ResourcePrincipalAuthenticationDetailsProviderBuilder> resourceBs,
                                                                                    UnaryOperator<ResourcePrincipalAuthenticationDetailsProviderBuilder> resourceOp) {
-        return
-            Stream.of(simple(c, simpleBs, simpleOp),
-                      configFile(c),
-                      instancePrincipals(c, instanceBs, instanceOp),
-                      resourcePrincipal(resourceBs, resourceOp))
+        return adp(Stream.of(simple(c, simpleBs, simpleOp),
+                             configFile(c),
+                             instancePrincipals(c, instanceBs, instanceOp),
+                             resourcePrincipal(resourceBs, resourceOp)));
+    }
+
+    @SuppressWarnings("checkstyle:linelength")
+    public static final Supplier<? extends BasicAuthenticationDetailsProvider> adp(Optional<? extends Supplier<? extends BasicAuthenticationDetailsProvider>> o0,
+                                                                                   Optional<? extends Supplier<? extends BasicAuthenticationDetailsProvider>> o1) {
+        return adp(Stream.of(o0, o1));
+    }
+
+    @SuppressWarnings("checkstyle:linelength")
+    public static final Supplier<? extends BasicAuthenticationDetailsProvider> adp(Optional<? extends Supplier<? extends BasicAuthenticationDetailsProvider>> o0,
+                                                                                   Optional<? extends Supplier<? extends BasicAuthenticationDetailsProvider>> o1,
+                                                                                   Optional<? extends Supplier<? extends BasicAuthenticationDetailsProvider>> o2) {
+        return adp(Stream.of(o0, o1, o2));
+    }
+
+    @SuppressWarnings("checkstyle:linelength")
+    public static final Supplier<? extends BasicAuthenticationDetailsProvider> adp(Optional<? extends Supplier<? extends BasicAuthenticationDetailsProvider>> o0,
+                                                                                   Optional<? extends Supplier<? extends BasicAuthenticationDetailsProvider>> o1,
+                                                                                   Optional<? extends Supplier<? extends BasicAuthenticationDetailsProvider>> o2,
+                                                                                   Optional<? extends Supplier<? extends BasicAuthenticationDetailsProvider>> o3) {
+        return adp(Stream.of(o0, o1, o2, o3));
+    }
+
+    @SuppressWarnings("checkstyle:linelength")
+    public static final Supplier<? extends BasicAuthenticationDetailsProvider> adp(Collection<? extends Optional<? extends Supplier<? extends BasicAuthenticationDetailsProvider>>> c) {
+        return adp(c.stream());
+    }
+
+    @SuppressWarnings("checkstyle:linelength")
+    public static final Supplier<? extends BasicAuthenticationDetailsProvider> adp(Stream<? extends Optional<? extends Supplier<? extends BasicAuthenticationDetailsProvider>>> s) {
+        return s
             .flatMap(Optional::stream)
             .findFirst()
             .orElseThrow();
