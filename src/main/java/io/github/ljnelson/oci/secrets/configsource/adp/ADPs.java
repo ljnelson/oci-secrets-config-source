@@ -39,7 +39,22 @@ import com.oracle.bmc.auth.SimplePrivateKeySupplier;
 import com.oracle.bmc.auth.StringPrivateKeySupplier;
 import io.github.ljnelson.oci.secrets.configsource.ConfigAccessor;
 
+import static java.lang.System.Logger;
+
+/**
+ * A utility class containing methods that produce {@link BasicAuthenticationDetailsProvider} instances of various
+ * kinds.
+ *
+ * @author <a href="https://about.me/lairdnelson/" target="_top">Laird Nelson</a>
+ */
 public final class ADPs {
+
+    private static final Logger LOGGER = System.getLogger(ADPs.class.getName());
+
+    private static final String DEFAULT_OCI_AUTH_PRIVATE_KEY_PATH =
+        Paths.get(System.getProperty("user.home"), ".oci", "oci_api_key.pem").toString();
+
+    private static final String DEFAULT_OCI_CONFIG_PROFILE = "DEFAULT";
 
     private static final String OCI_AUTH_FINGERPRINT = "oci.auth.fingerprint";
 
@@ -54,6 +69,14 @@ public final class ADPs {
     private static final String OCI_AUTH_TENANT_ID = "oci.auth.tenant-id";
 
     private static final String OCI_AUTH_USER_ID = "oci.auth.user-id";
+
+    private static final String OCI_CONFIG_PATH = "oci.config.path";
+
+    private static final String OCI_CONFIG_PROFILE = "oci.config.profile";
+
+    private static final String OCI_IMDS_TIMEOUT_MILLIS = "oci.imds.timeout.milliseconds";
+
+    private static final String OCI_RESOURCE_PRINCIPAL_VERSION = "OCI_RESOURCE_PRINCIPAL_VERSION";
 
     private ADPs() {
         super();
@@ -86,9 +109,7 @@ public final class ADPs {
                                                c.get(OCI_AUTH_PRIVATE_KEY, String.class)
                                                    .ifPresentOrElse(pk -> b.privateKeySupplier(new StringPrivateKeySupplier(pk)),
                                                                     () -> b.privateKeySupplier(new SimplePrivateKeySupplier(c.get(OCI_AUTH_PRIVATE_KEY_PATH, String.class)
-                                                                                                                            .orElse(Paths.get(System.getProperty("user.home"),
-                                                                                                                                              ".oci",
-                                                                                                                                              "oci_api_key.pem").toString()))));
+                                                                                                                            .orElse(DEFAULT_OCI_AUTH_PRIVATE_KEY_PATH))));
                                                return op.apply(b)::build;
                                            }))));
     }
@@ -98,15 +119,15 @@ public final class ADPs {
     }
 
     public static final Optional<Supplier<ConfigFileAuthenticationDetailsProvider>> configFile(ConfigAccessor c) {
-        String ociConfigProfile = c.get("oci.config.profile", String.class).orElse("DEFAULT");
-        String ociConfigPath = c.get("oci.config.path", String.class).orElse(null);
-        return configFile(ociConfigPath, ociConfigProfile);
+        return
+            configFile(c.get(OCI_CONFIG_PATH, String.class).orElse(null),
+                       c.get(OCI_CONFIG_PROFILE, String.class).orElse(DEFAULT_OCI_CONFIG_PROFILE));
     }
 
     public static final Optional<Supplier<ConfigFileAuthenticationDetailsProvider>> configFile(String ociConfigPath,
                                                                                                String ociConfigProfile) {
         if (ociConfigProfile == null) {
-            ociConfigProfile = "DEFAULT";
+            ociConfigProfile = DEFAULT_OCI_CONFIG_PROFILE;
         }
         ConfigFileAuthenticationDetailsProvider adp;
         try {
@@ -146,7 +167,7 @@ public final class ADPs {
                                                                                                                UnaryOperator<InstancePrincipalsAuthenticationDetailsProviderBuilder> op) {
         int timeoutPositiveMillis = 100;
         try {
-            timeoutPositiveMillis = Math.max(0, c.get("oci.imds.timeout.milliseconds", Integer.class).orElse(100));
+            timeoutPositiveMillis = Math.max(0, c.get(OCI_IMDS_TIMEOUT_MILLIS, Integer.class).orElse(100));
         } catch (IllegalArgumentException conversionException) {
         }
         return instancePrincipals(timeoutPositiveMillis, bs, op);
@@ -176,7 +197,7 @@ public final class ADPs {
     @SuppressWarnings("checkstyle:linelength")
     public static final Optional<Supplier<ResourcePrincipalAuthenticationDetailsProvider>> resourcePrincipal(Supplier<? extends ResourcePrincipalAuthenticationDetailsProviderBuilder> bs,
                                                                                                              UnaryOperator<ResourcePrincipalAuthenticationDetailsProviderBuilder> op) {
-        return Optional.ofNullable(System.getenv("OCI_RESOURCE_PRINCIPAL_VERSION") == null ? null : op.apply(bs.get())::build);
+        return Optional.ofNullable(System.getenv(OCI_RESOURCE_PRINCIPAL_VERSION) == null ? null : op.apply(bs.get())::build);
     }
 
     public static final Supplier<? extends BasicAuthenticationDetailsProvider> adp() {
@@ -184,27 +205,7 @@ public final class ADPs {
     }
 
     public static final Supplier<? extends BasicAuthenticationDetailsProvider> adp(ConfigAccessor c) {
-        return adp(c,
-                   SimpleAuthenticationDetailsProvider::builder,
-                   UnaryOperator.identity(),
-                   InstancePrincipalsAuthenticationDetailsProvider::builder,
-                   UnaryOperator.identity(),
-                   ResourcePrincipalAuthenticationDetailsProvider::builder,
-                   UnaryOperator.identity());
-    }
-
-    @SuppressWarnings("checkstyle:linelength")
-    public static final Supplier<? extends BasicAuthenticationDetailsProvider> adp(ConfigAccessor c,
-                                                                                   Supplier<? extends SimpleAuthenticationDetailsProviderBuilder> simpleBs,
-                                                                                   UnaryOperator<SimpleAuthenticationDetailsProviderBuilder> simpleOp,
-                                                                                   Supplier<? extends InstancePrincipalsAuthenticationDetailsProviderBuilder> instanceBs,
-                                                                                   UnaryOperator<InstancePrincipalsAuthenticationDetailsProviderBuilder> instanceOp,
-                                                                                   Supplier<? extends ResourcePrincipalAuthenticationDetailsProviderBuilder> resourceBs,
-                                                                                   UnaryOperator<ResourcePrincipalAuthenticationDetailsProviderBuilder> resourceOp) {
-        return adp(Stream.of(simple(c, simpleBs, simpleOp),
-                             configFile(c),
-                             instancePrincipals(c, instanceBs, instanceOp),
-                             resourcePrincipal(resourceBs, resourceOp)));
+        return adp(Stream.of(simple(c), configFile(c), instancePrincipals(c), resourcePrincipal()));
     }
 
     @SuppressWarnings("checkstyle:linelength")
