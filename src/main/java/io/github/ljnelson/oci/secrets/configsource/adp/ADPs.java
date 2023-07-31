@@ -22,8 +22,8 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 import com.oracle.bmc.Region;
@@ -87,13 +87,19 @@ public final class ADPs {
     }
 
     public static final Optional<Supplier<SimpleAuthenticationDetailsProvider>> simple(ConfigAccessor c) {
-        return simple(c, SimpleAuthenticationDetailsProvider::builder, UnaryOperator.identity());
+        return simple(c, SimpleAuthenticationDetailsProvider::builder);
+    }
+
+    @SuppressWarnings("checkstyle:linelength")
+    public static final Optional<Supplier<SimpleAuthenticationDetailsProvider>> simple(ConfigAccessor c,
+                                                                                       Supplier<? extends SimpleAuthenticationDetailsProviderBuilder> bs) {
+        return simple(c, bs, b -> b::build);
     }
 
     @SuppressWarnings("checkstyle:linelength")
     public static final Optional<Supplier<SimpleAuthenticationDetailsProvider>> simple(ConfigAccessor c,
                                                                                        Supplier<? extends SimpleAuthenticationDetailsProviderBuilder> bs,
-                                                                                       UnaryOperator<SimpleAuthenticationDetailsProviderBuilder> op) {
+                                                                                       Function<? super SimpleAuthenticationDetailsProviderBuilder, ? extends Supplier<SimpleAuthenticationDetailsProvider>> f) {
         return
             c.get(OCI_AUTH_FINGERPRINT, String.class)
             .flatMap(fingerprint -> c.get(OCI_AUTH_REGION, Region.class)
@@ -110,7 +116,7 @@ public final class ADPs {
                                                    .ifPresentOrElse(pk -> b.privateKeySupplier(new StringPrivateKeySupplier(pk)),
                                                                     () -> b.privateKeySupplier(new SimplePrivateKeySupplier(c.get(OCI_AUTH_PRIVATE_KEY_PATH, String.class)
                                                                                                                             .orElse(DEFAULT_OCI_AUTH_PRIVATE_KEY_PATH))));
-                                               return op.apply(b)::build;
+                                               return f.apply(b);
                                            }))));
     }
 
@@ -122,6 +128,10 @@ public final class ADPs {
         return
             configFile(c.get(OCI_CONFIG_PATH, String.class).orElse(null),
                        c.get(OCI_CONFIG_PROFILE, String.class).orElse(DEFAULT_OCI_CONFIG_PROFILE));
+    }
+
+    public static final Optional<Supplier<ConfigFileAuthenticationDetailsProvider>> configFile(String ociConfigPath) {
+        return configFile(ociConfigPath, DEFAULT_OCI_CONFIG_PROFILE);
     }
 
     public static final Optional<Supplier<ConfigFileAuthenticationDetailsProvider>> configFile(String ociConfigPath,
@@ -139,8 +149,9 @@ public final class ADPs {
         } catch (FileNotFoundException | NoSuchFileException e) {
             return Optional.empty();
         } catch (IOException e) {
-            // The underlying ConfigFileReader that does the real work does not throw a FileNotFoundException in this
-            // case (as it probably should). We have no choice but to parse the error message. See
+            // The underlying ConfigFileReader that does the real work does not throw a FileNotFoundException (as it
+            // probably should) when it cannot find the configuration file. To distinguish this "ordinary" IOException
+            // from other IOExceptions, we therefore have no choice but to parse the error message. See
             // https://github.com/oracle/oci-java-sdk/blob/v3.21.0/bmc-common/src/main/java/com/oracle/bmc/ConfigFileReader.java#L91-L95.
             String message = e.getMessage();
             if (message != null
@@ -148,6 +159,7 @@ public final class ADPs {
                 && message.endsWith(" because it does not exist or it is not a file.")) {
                 return Optional.empty();
             }
+            // It's not a "file not found" case; it's some other exception.
             throw new UncheckedIOException(message, e);
         }
         return Optional.of(() -> adp);
@@ -158,30 +170,46 @@ public final class ADPs {
     }
 
     public static final Optional<Supplier<InstancePrincipalsAuthenticationDetailsProvider>> instancePrincipals(ConfigAccessor c) {
-        return instancePrincipals(c, InstancePrincipalsAuthenticationDetailsProvider::builder, UnaryOperator.identity());
+        return instancePrincipals(c, InstancePrincipalsAuthenticationDetailsProvider::builder);
+    }
+
+    public static final Optional<Supplier<InstancePrincipalsAuthenticationDetailsProvider>> instancePrincipals(ConfigAccessor c,
+                                                                                                               Supplier<? extends InstancePrincipalsAuthenticationDetailsProviderBuilder> bs) {
+        return instancePrincipals(c, bs, b -> b::build);
     }
 
     @SuppressWarnings("checkstyle:linelength")
     public static final Optional<Supplier<InstancePrincipalsAuthenticationDetailsProvider>> instancePrincipals(ConfigAccessor c,
                                                                                                                Supplier<? extends InstancePrincipalsAuthenticationDetailsProviderBuilder> bs,
-                                                                                                               UnaryOperator<InstancePrincipalsAuthenticationDetailsProviderBuilder> op) {
+                                                                                                               Function<? super InstancePrincipalsAuthenticationDetailsProviderBuilder, ? extends Supplier<InstancePrincipalsAuthenticationDetailsProvider>> f) {
         int timeoutPositiveMillis = 100;
         try {
             timeoutPositiveMillis = Math.max(0, c.get(OCI_IMDS_TIMEOUT_MILLIS, Integer.class).orElse(100));
         } catch (IllegalArgumentException conversionException) {
         }
-        return instancePrincipals(timeoutPositiveMillis, bs, op);
+        return instancePrincipals(timeoutPositiveMillis, bs, f);
+    }
+
+    @SuppressWarnings("checkstyle:linelength")
+    public static final Optional<Supplier<InstancePrincipalsAuthenticationDetailsProvider>> instancePrincipals(int timeoutPositiveMillis) {
+        return instancePrincipals(timeoutPositiveMillis, InstancePrincipalsAuthenticationDetailsProvider::builder);
+    }
+
+    @SuppressWarnings("checkstyle:linelength")
+    public static final Optional<Supplier<InstancePrincipalsAuthenticationDetailsProvider>> instancePrincipals(int timeoutPositiveMillis,
+                                                                                                               Supplier<? extends InstancePrincipalsAuthenticationDetailsProviderBuilder> bs) {
+        return instancePrincipals(timeoutPositiveMillis, bs, b -> b::build);
     }
 
     @SuppressWarnings("checkstyle:linelength")
     public static final Optional<Supplier<InstancePrincipalsAuthenticationDetailsProvider>> instancePrincipals(int timeoutPositiveMillis,
                                                                                                                Supplier<? extends InstancePrincipalsAuthenticationDetailsProviderBuilder> bs,
-                                                                                                               UnaryOperator<InstancePrincipalsAuthenticationDetailsProviderBuilder> op) {
+                                                                                                               Function<? super InstancePrincipalsAuthenticationDetailsProviderBuilder, ? extends Supplier<InstancePrincipalsAuthenticationDetailsProvider>> f) {
         var b = bs.get();
         try {
             return
                 InetAddress.getByName(URI.create(b.getMetadataBaseUrl()).getHost()).isReachable(timeoutPositiveMillis)
-                ? Optional.of(op.apply(b)::build)
+                ? Optional.of(f.apply(b))
                 : Optional.empty();
         } catch (ConnectException e) {
             return Optional.empty();
@@ -191,13 +219,18 @@ public final class ADPs {
     }
 
     public static final Optional<Supplier<ResourcePrincipalAuthenticationDetailsProvider>> resourcePrincipal() {
-        return resourcePrincipal(ResourcePrincipalAuthenticationDetailsProvider::builder, UnaryOperator.identity());
+        return resourcePrincipal(ResourcePrincipalAuthenticationDetailsProvider::builder);
+    }
+
+    @SuppressWarnings("checkstyle:linelength")
+    public static final Optional<Supplier<ResourcePrincipalAuthenticationDetailsProvider>> resourcePrincipal(Supplier<? extends ResourcePrincipalAuthenticationDetailsProviderBuilder> bs) {
+        return resourcePrincipal(bs, b -> b::build);
     }
 
     @SuppressWarnings("checkstyle:linelength")
     public static final Optional<Supplier<ResourcePrincipalAuthenticationDetailsProvider>> resourcePrincipal(Supplier<? extends ResourcePrincipalAuthenticationDetailsProviderBuilder> bs,
-                                                                                                             UnaryOperator<ResourcePrincipalAuthenticationDetailsProviderBuilder> op) {
-        return Optional.ofNullable(System.getenv(OCI_RESOURCE_PRINCIPAL_VERSION) == null ? null : op.apply(bs.get())::build);
+                                                                                                             Function<? super ResourcePrincipalAuthenticationDetailsProviderBuilder, ? extends Supplier<ResourcePrincipalAuthenticationDetailsProvider>> f) {
+        return Optional.ofNullable(System.getenv(OCI_RESOURCE_PRINCIPAL_VERSION) == null ? null : f.apply(bs.get()));
     }
 
     public static final Supplier<? extends BasicAuthenticationDetailsProvider> adp() {

@@ -53,14 +53,14 @@ public final class SecretBundleContentDetailsFunctions {
             if (propertyName == null || propertyName.isBlank()) {
                 return null;
             }
-            var builder = bs.get(); // e.g. GetSecretBundleByNameRequest.builder();
-            c.get(propertyName + ".opcRequestId", String.class).ifPresent(builder::opcRequestId);
-            c.get(propertyName + ".secretName", String.class).ifPresentOrElse(builder::secretName, () -> builder.secretName(propertyName));
-            c.get(propertyName + ".secretVersionName", String.class).ifPresent(builder::secretVersionName);
-            c.get(propertyName + ".stage", GetSecretBundleByNameRequest.Stage.class).ifPresent(builder::stage);
-            c.get(propertyName + ".vaultId", String.class).ifPresent(builder::vaultId);
-            c.get(propertyName + ".versionNumber", Long.class).ifPresent(builder::versionNumber);
-            return f.apply(op.apply(builder).build());
+            var b = bs.get(); // e.g. GetSecretBundleByNameRequest.b();
+            c.get(propertyName + ".opcRequestId", String.class).ifPresent(b::opcRequestId);
+            c.get(propertyName + ".secretName", String.class).ifPresentOrElse(b::secretName, () -> b.secretName(propertyName));
+            c.get(propertyName + ".secretVersionName", String.class).ifPresent(b::secretVersionName);
+            c.get(propertyName + ".stage", GetSecretBundleByNameRequest.Stage.class).ifPresent(b::stage);
+            c.get(propertyName + ".vaultId", String.class).ifPresent(b::vaultId);
+            c.get(propertyName + ".versionNumber", Long.class).ifPresent(b::versionNumber);
+            return f.apply(op.apply(b).build());
         };
     }
 
@@ -75,6 +75,48 @@ public final class SecretBundleContentDetailsFunctions {
                                            r -> ss.get().getSecretBundle(r).getSecretBundle().getSecretBundleContent());
     }
 
+    /**
+     * Returns a {@link Function} that, when supplied with a configuration property name, will return a {@link
+     * SecretBundleContentDetails} for it, inferring connectivity and production information from the supplied {@link
+     * ConfigAccessor}.
+     *
+     * <p>When the {@link Function} that is returned is invoked with a configuration property name of, for example,
+     * {@code foo.bar}, then, in the course of producing a {@link SecretBundleContentDetails}, the supplied {@link
+     * ConfigAccessor} will be asked to {@linkplain ConfigAccessor#get(String, Class) supply values} for the following
+     * configuration property name constructions:</p>
+     *
+     * <ul>
+     *
+     * <li>{@code foo.bar.opcRequestId}</li>
+     *
+     * <li>{@code foo.bar.secretId}</li>
+     *
+     * <li>{@code foo.bar.secretVersionName}</li>
+     *
+     * <li>{@code foo.bar.stage}</li>
+     *
+     * <li>{@code foo.bar.versionNumber}</li>
+     *
+     * </ul>
+     *
+     * @param c the {@link ConfigAccessor}; must not be {@code null}
+     *
+     * @param bs a {@link Supplier} of {@link GetSecretBundleRequest.Builder} instances; must not be {@code null}; must
+     * not return {@code null} {@link GetSecretBundleRequest.Builder} instances
+     *
+     * @param op an operation that customizes and returns a {@link GetSecretBundleRequest.Builder} after connectivity
+     * and production information has been applied; must not be {@code null} but may be (and commonly is) {@link
+     * UnaryOperator#identity}
+     *
+     * @param f a {@link Function} that, when supplied with a {@link GetSecretBundleRequest}, returns a {@link
+     * SecretBundleContentDetails}; must not be {@code null}; must not return {@code null} {@link
+     * SecretBundleContentDetails} instances
+     *
+     * @exception NullPointerException if any argument is {@code null}
+     *
+     * @exception com.oracle.bmc.model.BmcException if there was an Oracle Cloud Infrastructure-related error, typically
+     * encountered by the supplied {@code op} {@link Function}
+     */
     @SuppressWarnings({"checkstyle:linelength"})
     public static Function<String, SecretBundleContentDetails> secretBundleContentDetailsById(ConfigAccessor c,
                                                                                               Supplier<? extends GetSecretBundleRequest.Builder> bs,
@@ -88,13 +130,13 @@ public final class SecretBundleContentDetailsFunctions {
             if (propertyName == null || propertyName.isBlank()) {
                 return null;
             }
-            var builder = bs.get(); // e.g. GetSecretBundleRequest.builder();
-            c.get(propertyName + ".opcRequestId", String.class).ifPresent(builder::opcRequestId);
-            c.get(propertyName + ".secretId", String.class).ifPresent(builder::secretId);
-            c.get(propertyName + ".secretVersionName", String.class).ifPresent(builder::secretVersionName);
-            c.get(propertyName + ".stage", GetSecretBundleRequest.Stage.class).ifPresent(builder::stage);
-            c.get(propertyName + ".versionNumber", Long.class).ifPresent(builder::versionNumber);
-            return f.apply(op.apply(builder).build());
+            var b = bs.get(); // e.g. GetSecretBundleRequest.b();
+            c.get(propertyName + ".opcRequestId", String.class).ifPresent(b::opcRequestId);
+            c.get(propertyName + ".secretId", String.class).ifPresent(b::secretId);
+            c.get(propertyName + ".secretVersionName", String.class).ifPresent(b::secretVersionName);
+            c.get(propertyName + ".stage", GetSecretBundleRequest.Stage.class).ifPresent(b::stage);
+            c.get(propertyName + ".versionNumber", Long.class).ifPresent(b::versionNumber);
+            return f.apply(op.apply(b).build());
         };
     }
 
