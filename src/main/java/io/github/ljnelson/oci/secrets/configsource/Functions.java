@@ -1,0 +1,46 @@
+/*
+ * Copyright © 2022–2023 Laird Nelson.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+package io.github.ljnelson.oci.secrets.configsource;
+
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+
+/**
+ * A utility class containing useful operations for {@link Function}s.
+ *
+ * @author <a href="https://about.me/lairdnelson/" target="_top">Laird Nelson</a>
+ */
+public final class Functions {
+
+    private Functions() {
+        super();
+    }
+
+    /**
+     * <a href="https://en.wikipedia.org/wiki/Memoization" target="_top"><em>Memoizes</em></a> the supplied {@link
+     * Function} and returns the memoization.
+     *
+     * @param <T> the type of the supplied {@link Function}'s sole parameter
+     *
+     * @param <R> the return type of the supplied {@link Function}
+     *
+     * @param f the {@link Function} to memoize; must not be {@code null}
+     *
+     * @return a memoized version of the supplied {@link Function}; never {@code null}
+     */
+    public static <T, R> Function<T, R> memoizedFunction(Function<T, R> f) {
+        var cache = new ConcurrentHashMap<T, R>();
+        return t -> cache.computeIfAbsent(t, f::apply);
+    }
+
+}

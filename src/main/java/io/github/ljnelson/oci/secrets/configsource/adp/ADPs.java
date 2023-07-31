@@ -1,0 +1,278 @@
+/*
+ * Copyright © 2022–2023 Laird Nelson.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+package io.github.ljnelson.oci.secrets.configsource.adp;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.net.ConnectException;
+import java.net.InetAddress;
+import java.net.URI;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Paths;
+import java.util.Collection;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
+
+import com.oracle.bmc.Region;
+import com.oracle.bmc.auth.BasicAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider.InstancePrincipalsAuthenticationDetailsProviderBuilder;
+import com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider.ResourcePrincipalAuthenticationDetailsProviderBuilder;
+import com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.SimpleAuthenticationDetailsProviderBuilder;
+import com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.SimplePrivateKeySupplier;
+import com.oracle.bmc.auth.StringPrivateKeySupplier;
+import io.github.ljnelson.oci.secrets.configsource.ConfigAccessor;
+
+import static java.lang.System.Logger;
+
+/**
+ * A utility class containing methods that produce {@link BasicAuthenticationDetailsProvider} instances of various
+ * kinds.
+ *
+ * @author <a href="https://about.me/lairdnelson/" target="_top">Laird Nelson</a>
+ */
+public final class ADPs {
+
+    private static final Logger LOGGER = System.getLogger(ADPs.class.getName());
+
+    private static final String DEFAULT_OCI_AUTH_PRIVATE_KEY_PATH =
+        Paths.get(System.getProperty("user.home"), ".oci", "oci_api_key.pem").toString();
+
+    private static final String DEFAULT_OCI_CONFIG_PROFILE = "DEFAULT";
+
+    private static final String OCI_AUTH_FINGERPRINT = "oci.auth.fingerprint";
+
+    private static final String OCI_AUTH_PASSPHRASE = "oci.auth.passphrase"; // optional for simple
+
+    private static final String OCI_AUTH_PRIVATE_KEY = "oci.auth.private-key"; // optional for simple
+
+    private static final String OCI_AUTH_PRIVATE_KEY_PATH = OCI_AUTH_PRIVATE_KEY + "-path"; // optional for simple
+
+    private static final String OCI_AUTH_REGION = "oci.auth.region";
+
+    private static final String OCI_AUTH_TENANT_ID = "oci.auth.tenant-id";
+
+    private static final String OCI_AUTH_USER_ID = "oci.auth.user-id";
+
+    private static final String OCI_CONFIG_PATH = "oci.config.path";
+
+    private static final String OCI_CONFIG_PROFILE = "oci.config.profile";
+
+    private static final String OCI_IMDS_TIMEOUT_MILLIS = "oci.imds.timeout.milliseconds";
+
+    private static final String OCI_RESOURCE_PRINCIPAL_VERSION = "OCI_RESOURCE_PRINCIPAL_VERSION";
+
+    private ADPs() {
+        super();
+    }
+
+    public static final Optional<Supplier<SimpleAuthenticationDetailsProvider>> simple() {
+        return simple(ConfigAccessor.ofMicroProfileConfig());
+    }
+
+    public static final Optional<Supplier<SimpleAuthenticationDetailsProvider>> simple(ConfigAccessor c) {
+        return simple(c, SimpleAuthenticationDetailsProvider::builder);
+    }
+
+    @SuppressWarnings("checkstyle:linelength")
+    public static final Optional<Supplier<SimpleAuthenticationDetailsProvider>> simple(ConfigAccessor c,
+                                                                                       Supplier<? extends SimpleAuthenticationDetailsProviderBuilder> bs) {
+        return simple(c, bs, b -> b::build);
+    }
+
+    @SuppressWarnings("checkstyle:linelength")
+    public static final Optional<Supplier<SimpleAuthenticationDetailsProvider>> simple(ConfigAccessor c,
+                                                                                       Supplier<? extends SimpleAuthenticationDetailsProviderBuilder> bs,
+                                                                                       Function<? super SimpleAuthenticationDetailsProviderBuilder, ? extends Supplier<SimpleAuthenticationDetailsProvider>> f) {
+        return
+            c.get(OCI_AUTH_FINGERPRINT, String.class)
+            .flatMap(fingerprint -> c.get(OCI_AUTH_REGION, Region.class)
+                     .flatMap(region -> c.get(OCI_AUTH_TENANT_ID, String.class)
+                              .flatMap(tenantId -> c.get(OCI_AUTH_USER_ID, String.class)
+                                       .map(userId -> {
+                                               var b = bs.get();
+                                               b.fingerprint(fingerprint);
+                                               b.region(region);
+                                               b.tenantId(tenantId);
+                                               b.userId(userId);
+                                               c.get(OCI_AUTH_PASSPHRASE, String.class).ifPresent(b::passPhrase);
+                                               c.get(OCI_AUTH_PRIVATE_KEY, String.class)
+                                                   .ifPresentOrElse(pk -> b.privateKeySupplier(new StringPrivateKeySupplier(pk)),
+                                                                    () -> b.privateKeySupplier(new SimplePrivateKeySupplier(c.get(OCI_AUTH_PRIVATE_KEY_PATH, String.class)
+                                                                                                                            .orElse(DEFAULT_OCI_AUTH_PRIVATE_KEY_PATH))));
+                                               return f.apply(b);
+                                           }))));
+    }
+
+    public static final Optional<Supplier<ConfigFileAuthenticationDetailsProvider>> configFile() {
+        return configFile(ConfigAccessor.ofMicroProfileConfig());
+    }
+
+    public static final Optional<Supplier<ConfigFileAuthenticationDetailsProvider>> configFile(ConfigAccessor c) {
+        return
+            configFile(c.get(OCI_CONFIG_PATH, String.class).orElse(null),
+                       c.get(OCI_CONFIG_PROFILE, String.class).orElse(DEFAULT_OCI_CONFIG_PROFILE));
+    }
+
+    public static final Optional<Supplier<ConfigFileAuthenticationDetailsProvider>> configFile(String ociConfigPath) {
+        return configFile(ociConfigPath, DEFAULT_OCI_CONFIG_PROFILE);
+    }
+
+    public static final Optional<Supplier<ConfigFileAuthenticationDetailsProvider>> configFile(String ociConfigPath,
+                                                                                               String ociConfigProfile) {
+        if (ociConfigProfile == null) {
+            ociConfigProfile = DEFAULT_OCI_CONFIG_PROFILE;
+        }
+        ConfigFileAuthenticationDetailsProvider adp;
+        try {
+            if (ociConfigPath == null) {
+                adp = new ConfigFileAuthenticationDetailsProvider(ociConfigProfile);
+            } else {
+                adp = new ConfigFileAuthenticationDetailsProvider(ociConfigPath, ociConfigProfile);
+            }
+        } catch (FileNotFoundException | NoSuchFileException e) {
+            return Optional.empty();
+        } catch (IOException e) {
+            // The underlying ConfigFileReader that does the real work does not throw a FileNotFoundException (as it
+            // probably should) when it cannot find the configuration file. To distinguish this "ordinary" IOException
+            // from other IOExceptions, we therefore have no choice but to parse the error message. See
+            // https://github.com/oracle/oci-java-sdk/blob/v3.21.0/bmc-common/src/main/java/com/oracle/bmc/ConfigFileReader.java#L91-L95.
+            String message = e.getMessage();
+            if (message != null
+                && message.startsWith("Can't load the default config from ")
+                && message.endsWith(" because it does not exist or it is not a file.")) {
+                return Optional.empty();
+            }
+            // It's not a "file not found" case; it's some other exception.
+            throw new UncheckedIOException(message, e);
+        }
+        return Optional.of(() -> adp);
+    }
+
+    public static final Optional<Supplier<InstancePrincipalsAuthenticationDetailsProvider>> instancePrincipals() {
+        return instancePrincipals(ConfigAccessor.ofMicroProfileConfig());
+    }
+
+    public static final Optional<Supplier<InstancePrincipalsAuthenticationDetailsProvider>> instancePrincipals(ConfigAccessor c) {
+        return instancePrincipals(c, InstancePrincipalsAuthenticationDetailsProvider::builder);
+    }
+
+    public static final Optional<Supplier<InstancePrincipalsAuthenticationDetailsProvider>> instancePrincipals(ConfigAccessor c,
+                                                                                                               Supplier<? extends InstancePrincipalsAuthenticationDetailsProviderBuilder> bs) {
+        return instancePrincipals(c, bs, b -> b::build);
+    }
+
+    @SuppressWarnings("checkstyle:linelength")
+    public static final Optional<Supplier<InstancePrincipalsAuthenticationDetailsProvider>> instancePrincipals(ConfigAccessor c,
+                                                                                                               Supplier<? extends InstancePrincipalsAuthenticationDetailsProviderBuilder> bs,
+                                                                                                               Function<? super InstancePrincipalsAuthenticationDetailsProviderBuilder, ? extends Supplier<InstancePrincipalsAuthenticationDetailsProvider>> f) {
+        int timeoutPositiveMillis = 100;
+        try {
+            timeoutPositiveMillis = Math.max(0, c.get(OCI_IMDS_TIMEOUT_MILLIS, Integer.class).orElse(100));
+        } catch (IllegalArgumentException conversionException) {
+        }
+        return instancePrincipals(timeoutPositiveMillis, bs, f);
+    }
+
+    @SuppressWarnings("checkstyle:linelength")
+    public static final Optional<Supplier<InstancePrincipalsAuthenticationDetailsProvider>> instancePrincipals(int timeoutPositiveMillis) {
+        return instancePrincipals(timeoutPositiveMillis, InstancePrincipalsAuthenticationDetailsProvider::builder);
+    }
+
+    @SuppressWarnings("checkstyle:linelength")
+    public static final Optional<Supplier<InstancePrincipalsAuthenticationDetailsProvider>> instancePrincipals(int timeoutPositiveMillis,
+                                                                                                               Supplier<? extends InstancePrincipalsAuthenticationDetailsProviderBuilder> bs) {
+        return instancePrincipals(timeoutPositiveMillis, bs, b -> b::build);
+    }
+
+    @SuppressWarnings("checkstyle:linelength")
+    public static final Optional<Supplier<InstancePrincipalsAuthenticationDetailsProvider>> instancePrincipals(int timeoutPositiveMillis,
+                                                                                                               Supplier<? extends InstancePrincipalsAuthenticationDetailsProviderBuilder> bs,
+                                                                                                               Function<? super InstancePrincipalsAuthenticationDetailsProviderBuilder, ? extends Supplier<InstancePrincipalsAuthenticationDetailsProvider>> f) {
+        var b = bs.get();
+        try {
+            return
+                InetAddress.getByName(URI.create(b.getMetadataBaseUrl()).getHost()).isReachable(timeoutPositiveMillis)
+                ? Optional.of(f.apply(b))
+                : Optional.empty();
+        } catch (ConnectException e) {
+            return Optional.empty();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e.getMessage(), e);
+        }
+    }
+
+    public static final Optional<Supplier<ResourcePrincipalAuthenticationDetailsProvider>> resourcePrincipal() {
+        return resourcePrincipal(ResourcePrincipalAuthenticationDetailsProvider::builder);
+    }
+
+    @SuppressWarnings("checkstyle:linelength")
+    public static final Optional<Supplier<ResourcePrincipalAuthenticationDetailsProvider>> resourcePrincipal(Supplier<? extends ResourcePrincipalAuthenticationDetailsProviderBuilder> bs) {
+        return resourcePrincipal(bs, b -> b::build);
+    }
+
+    @SuppressWarnings("checkstyle:linelength")
+    public static final Optional<Supplier<ResourcePrincipalAuthenticationDetailsProvider>> resourcePrincipal(Supplier<? extends ResourcePrincipalAuthenticationDetailsProviderBuilder> bs,
+                                                                                                             Function<? super ResourcePrincipalAuthenticationDetailsProviderBuilder, ? extends Supplier<ResourcePrincipalAuthenticationDetailsProvider>> f) {
+        return Optional.ofNullable(System.getenv(OCI_RESOURCE_PRINCIPAL_VERSION) == null ? null : f.apply(bs.get()));
+    }
+
+    public static final Supplier<? extends BasicAuthenticationDetailsProvider> adp() {
+        return adp(ConfigAccessor.ofMicroProfileConfig());
+    }
+
+    public static final Supplier<? extends BasicAuthenticationDetailsProvider> adp(ConfigAccessor c) {
+        return adp(Stream.of(simple(c), configFile(c), instancePrincipals(c), resourcePrincipal()));
+    }
+
+    @SuppressWarnings("checkstyle:linelength")
+    public static final Supplier<? extends BasicAuthenticationDetailsProvider> adp(Optional<? extends Supplier<? extends BasicAuthenticationDetailsProvider>> o0,
+                                                                                   Optional<? extends Supplier<? extends BasicAuthenticationDetailsProvider>> o1) {
+        return adp(Stream.of(o0, o1));
+    }
+
+    @SuppressWarnings("checkstyle:linelength")
+    public static final Supplier<? extends BasicAuthenticationDetailsProvider> adp(Optional<? extends Supplier<? extends BasicAuthenticationDetailsProvider>> o0,
+                                                                                   Optional<? extends Supplier<? extends BasicAuthenticationDetailsProvider>> o1,
+                                                                                   Optional<? extends Supplier<? extends BasicAuthenticationDetailsProvider>> o2) {
+        return adp(Stream.of(o0, o1, o2));
+    }
+
+    @SuppressWarnings("checkstyle:linelength")
+    public static final Supplier<? extends BasicAuthenticationDetailsProvider> adp(Optional<? extends Supplier<? extends BasicAuthenticationDetailsProvider>> o0,
+                                                                                   Optional<? extends Supplier<? extends BasicAuthenticationDetailsProvider>> o1,
+                                                                                   Optional<? extends Supplier<? extends BasicAuthenticationDetailsProvider>> o2,
+                                                                                   Optional<? extends Supplier<? extends BasicAuthenticationDetailsProvider>> o3) {
+        return adp(Stream.of(o0, o1, o2, o3));
+    }
+
+    @SuppressWarnings("checkstyle:linelength")
+    public static final Supplier<? extends BasicAuthenticationDetailsProvider> adp(Collection<? extends Optional<? extends Supplier<? extends BasicAuthenticationDetailsProvider>>> c) {
+        return adp(c.stream());
+    }
+
+    @SuppressWarnings("checkstyle:linelength")
+    public static final Supplier<? extends BasicAuthenticationDetailsProvider> adp(Stream<? extends Optional<? extends Supplier<? extends BasicAuthenticationDetailsProvider>>> s) {
+        return s
+            .flatMap(Optional::stream)
+            .findFirst()
+            .orElseThrow();
+    }
+
+}
